@@ -1,0 +1,42 @@
+.nurse-picker {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  margin-bottom: 12px;
+  scrollbar-width: none;
+}
+.nurse-picker::-webkit-scrollbar { display: none; }
+
+/* Pílulas de seleção — círculos neumórficos */
+.nurse-pill {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  border: none;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 800;
+  box-shadow: var(--neu-btn);
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.nurse-pill:active { box-shadow: var(--neu-btn-active); }
+
+.nurse-pill.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: #fff;
+  box-shadow: var(--shadow-glow);
+}
+
+.selected-nurse-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+  text-align: center;
+}

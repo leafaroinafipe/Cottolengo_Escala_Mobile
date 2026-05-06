@@ -1,0 +1,146 @@
+.login-page {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 20px;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-canvas);
+}
+
+/* Glow decorativo coral */
+.login-glow {
+  position: absolute;
+  top: -10%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 320px; height: 320px;
+  background: radial-gradient(circle, rgba(242, 94, 39, 0.18) 0%, transparent 70%);
+  pointer-events: none;
+  filter: blur(60px);
+}
+
+.login-content {
+  width: 100%;
+  max-width: 360px;
+  position: relative;
+  z-index: 1;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 44px;
+}
+
+/* Ícone com gradient accent */
+.login-icon {
+  width: 84px; height: 84px;
+  background: var(--accent-grad);
+  border-radius: var(--r-xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: 800;
+  color: #fff;
+  box-shadow: var(--shadow-glow-lg);
+  margin: 0 auto var(--sp-5);
+  letter-spacing: -0.02em;
+}
+
+.login-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  margin-bottom: 6px;
+  letter-spacing: -0.02em;
+}
+
+.login-subtitle {
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+/* Formulário com card neumórfico */
+.login-form {
+  background: var(--bg-surface);
+  border-radius: var(--radius-xl);
+  padding: 28px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: var(--neu-card);
+  border: 1px solid var(--border);
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-field label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding-left: 4px;
+}
+
+.password-wrapper { position: relative; }
+.password-wrapper input { padding-right: 52px; }
+
+.password-toggle {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 17px;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  opacity: 0.5;
+  transition: opacity var(--transition);
+}
+.password-toggle:hover { opacity: 1; }
+
+.login-footer {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-top: 28px;
+}
+
+.label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.forgot-link {
+  font-size: 12px;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-weight: 600;
+  opacity: 0.85;
+  transition: opacity var(--transition);
+}
+.forgot-link:hover { opacity: 1; }
+
+.reset-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  padding: 10px 0;
+}
+.reset-success-icon  { font-size: 44px; line-height: 1; }
+.reset-success-title { font-size: 18px; font-weight: 700; }
+.reset-success-desc  { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }

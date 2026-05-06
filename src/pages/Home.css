@@ -1,0 +1,145 @@
+.home-page { padding: 22px 18px; min-height: 100%; }
+
+.home-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 26px;
+}
+
+.home-greeting { font-size: 13px; color: var(--text-muted); letter-spacing: 0.02em; }
+.home-name { font-size: 22px; font-weight: 800; color: var(--text-primary); }
+
+.home-avatar {
+  width: 44px; height: 44px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-glow);
+}
+
+.home-loading {
+  display: flex;
+  justify-content: center;
+  padding: 60px 0;
+}
+
+/* Card do turno de hoje — gradiente escuro com accent */
+.today-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-xl);
+  padding: 22px 20px;
+  margin-bottom: 22px;
+  box-shadow: var(--neu-card);
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+.today-card::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 120px; height: 120px;
+  background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.today-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+.today-shift {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.today-shift-name  { font-size: 18px; font-weight: 700; }
+.today-shift-hours { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+
+.today-rest {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* Seção próximos turnos */
+.section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+  padding-left: 2px;
+}
+
+.upcoming-list {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--neu-card);
+}
+
+.upcoming-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.upcoming-item:last-child { border-bottom: none; }
+
+.upcoming-date {
+  min-width: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+.upcoming-month {
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.upcoming-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.upcoming-name  { font-size: 14px; font-weight: 500; }
+.upcoming-hours { font-size: 13px; color: var(--text-muted); }
+
+/* Banner de pendentes */
+.pending-banner {
+  margin-top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: var(--neu-card);
+  border: 1px solid rgba(232, 64, 64, 0.18);
+}

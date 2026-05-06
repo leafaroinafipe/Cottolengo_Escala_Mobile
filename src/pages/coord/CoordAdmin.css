@@ -1,0 +1,30 @@
+.admin-page { padding: 22px 18px; }
+
+.admin-header { margin-bottom: 22px; }
+
+.nurses-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.nurse-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--neu-card);
+  border: 1px solid var(--border);
+}
+
+.nurse-item-info { flex: 1; min-width: 0; }
+
+.nurse-item-name {
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

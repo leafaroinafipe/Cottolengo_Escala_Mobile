@@ -1,0 +1,115 @@
+.sol-page { padding: 22px 18px; }
+
+.sol-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.sol-list { display: flex; flex-direction: column; gap: 12px; }
+
+/* Cards de solicitação */
+.sol-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  box-shadow: var(--neu-card);
+  border: 1px solid var(--border);
+}
+
+.sol-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.sol-tipo { font-size: 15px; font-weight: 700; }
+
+.sol-detail {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 5px;
+  line-height: 1.5;
+}
+
+.sol-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+/* Card de solicitação da enfermeira (view local) */
+.request-card {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  box-shadow: var(--neu-card);
+  border: 1px solid var(--border);
+}
+
+.request-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.request-nurse { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+
+.request-detail {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin-top: 10px;
+  box-shadow: var(--neu-inset);
+}
+.request-detail p { font-size: 13px; color: var(--text-secondary); margin-bottom: 3px; }
+.request-detail p:last-child { margin-bottom: 0; }
+.request-detail strong { color: var(--text-primary); }
+
+.request-obs {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 10px;
+  font-style: italic;
+}
+
+.request-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+/* Seletor de tipo */
+.tipo-selector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.tipo-btn {
+  flex: 1;
+  padding: 10px 6px;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  box-shadow: var(--neu-btn);
+  transition: all var(--transition);
+  text-align: center;
+  border: none;
+}
+.tipo-btn.active {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: #fff;
+  box-shadow: var(--shadow-glow);
+}
+
+.modal-form { display: flex; flex-direction: column; gap: 14px; }
+.modal textarea { resize: none; }
+.modal select { appearance: none; }
+
+.requests-list { display: flex; flex-direction: column; gap: 12px; }

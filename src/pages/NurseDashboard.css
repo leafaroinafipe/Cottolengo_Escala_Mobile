@@ -1,0 +1,37 @@
+.shift-breakdown {
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  box-shadow: var(--neu-card);
+}
+
+.breakdown-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.breakdown-row:last-child { border-bottom: none; }
+
+.breakdown-name {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.breakdown-count {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  min-width: 30px;
+  text-align: right;
+}
+
+.breakdown-hours {
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 600;
+  min-width: 42px;
+  text-align: right;
+}
