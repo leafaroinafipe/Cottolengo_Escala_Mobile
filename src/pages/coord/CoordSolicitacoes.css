@@ -1,6 +1,55 @@
+/* ════════════════════════════════════════════════════════════════════
+   CoordSolicitacoes — overrides e estilos exclusivos da visao
+   coordenadora. A base de .sol-card / .sol-detail vem de Solicitacoes.css
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Botoes de acao ocupam toda a largura igualmente */
 .sol-actions {
   display: flex;
   gap: 10px;
-  margin-top: 12px;
+  margin-top: 14px;
 }
 .sol-actions .btn { flex: 1; }
+
+/* Badge de nome da funcionaria — destaque na visao coord */
+.sol-tipo {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Detalhe da troca com fundo recuado (neumorfismo inset) */
+.sol-detail {
+  background: var(--bg-recessed);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  box-shadow: var(--neu-inset);
+  border: none;
+}
+
+/* Toast de feedback no rodape */
+.toast-bar {
+  position: fixed;
+  bottom: calc(var(--bottom-nav-h, 64px) + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 20px;
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  z-index: 999;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  animation: toast-in 0.25s ease;
+}
+.toast-success { background: var(--success); color: #fff; }
+.toast-danger  { background: var(--danger);  color: #fff; }
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
