@@ -45,7 +45,13 @@ service cloud.firestore {
     }
 
     match /solicitacoes/{docId} {
-      allow read:   if isAuth() && (isCoordinator() || resource.data.nurseId == callerNurseId());
+      // Qualquer auth pode ler pendentes (checagem de conflito de datas no formulário).
+      // Aprovadas/rejeitadas: apenas a própria enfermeira ou coordenadora.
+      allow read:   if isAuth() && (
+                      isCoordinator() ||
+                      resource.data.nurseId == callerNurseId() ||
+                      resource.data.status == 'pendente'
+                    );
 
       // Enfermeira só pode criar pedido em nome dela mesma e sempre como pendente.
       // Coord também pode criar (ex: lançar férias administrativamente).
@@ -62,6 +68,12 @@ service cloud.firestore {
 
     match /usuarios/{uid} {
       allow read:  if isAuth() && (request.auth.uid == uid || isCoordinator());
+      allow write: if isCoordinator();
+    }
+
+    match /publicacoes/{docId} {
+      // docId format: {year}_{monthNum}
+      allow read:  if isAuth();
       allow write: if isCoordinator();
     }
 

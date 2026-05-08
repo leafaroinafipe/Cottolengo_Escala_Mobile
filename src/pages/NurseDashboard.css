@@ -1,37 +1,231 @@
-.shift-breakdown {
-  background: var(--bg-surface);
-  border-radius: var(--radius-lg);
-  padding: 16px 18px;
-  box-shadow: var(--neu-card);
+/* ════════════════════════════════════
+   NurseDashboard — visão mensal/anual
+   ════════════════════════════════════ */
+
+.ndb-page {
+  padding: 22px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.breakdown-row {
+/* ── Topo: título + toggle ── */
+.ndb-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.ndb-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Toggle Mensal / Anual */
+.ndb-toggle {
+  display: flex;
+  background: var(--bg-elevated);
+  border-radius: var(--r-full);
+  padding: 3px;
+  box-shadow: var(--shadow-soft);
+  gap: 2px;
+}
+.ndb-toggle-btn {
+  padding: 6px 16px;
+  border-radius: var(--r-full);
+  font-size: 12px;
+  font-weight: 700;
+  background: transparent;
+  color: var(--text-muted);
+  border: none;
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), box-shadow var(--transition);
+  white-space: nowrap;
+}
+.ndb-toggle-btn.active {
+  background: var(--accent-grad);
+  color: #fff;
+  box-shadow: var(--shadow-glow);
+}
+
+/* ── Grid de KPIs ── */
+.ndb-kpi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.ndb-kpi-grid--3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.ndb-kpi {
+  border-radius: var(--r-lg);
+  padding: 16px 14px;
+  position: relative;
+  overflow: hidden;
+}
+/* Decoração interna */
+.ndb-kpi::after {
+  content: '';
+  position: absolute;
+  right: -16px; top: -16px;
+  width: 70px; height: 70px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.07);
+  pointer-events: none;
+}
+.ndb-kpi--accent { background: linear-gradient(135deg, #D04515 0%, #F25E27 100%); }
+.ndb-kpi--night  { background: linear-gradient(135deg, #2e1065 0%, #7c3aed 100%); }
+.ndb-kpi--work   { background: linear-gradient(135deg, #064e3b 0%, #059669 100%); }
+.ndb-kpi--off    { background: linear-gradient(135deg, #1f2937 0%, #374151 100%); }
+
+.ndb-kpi-label {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.65);
+  margin-bottom: 6px;
+}
+.ndb-kpi-value {
+  font-size: 30px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.ndb-kpi-unit {
+  font-size: 16px;
+  font-weight: 600;
+  opacity: 0.8;
+  margin-left: 2px;
+}
+
+/* ── Período do dia ── */
+.ndb-period-row {
+  display: flex;
+  background: var(--bg-surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  padding: 16px 0;
+}
+.ndb-period-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.ndb-period-divider {
+  width: 1px;
+  background: var(--divider);
+  align-self: stretch;
+}
+.ndb-period-icon { font-size: 20px; line-height: 1; }
+.ndb-period-count {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.ndb-period-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── Card genérico ── */
+.ndb-card {
+  background: var(--bg-surface);
+  border-radius: var(--r-lg);
+  padding: 16px 18px;
+  box-shadow: var(--shadow-card);
+}
+.ndb-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 14px;
+}
+
+/* ── Barra de turno ── */
+.ndb-bar-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--border);
+  margin-bottom: 10px;
 }
-.breakdown-row:last-child { border-bottom: none; }
-
-.breakdown-name {
+.ndb-bar-row:last-child { margin-bottom: 0; }
+.ndb-bar-chip {
+  font-size: 9.5px !important;
+  padding: 2px 6px !important;
+  flex-shrink: 0;
+  min-width: 28px;
+  text-align: center;
+}
+.ndb-bar-track {
   flex: 1;
-  font-size: 13px;
-  color: var(--text-secondary);
+  height: 8px;
+  background: var(--bg-elevated);
+  border-radius: var(--r-full);
+  overflow: hidden;
 }
-
-.breakdown-count {
-  font-size: 14px;
+.ndb-bar-fill {
+  height: 100%;
+  border-radius: var(--r-full);
+  transition: width 0.5s var(--ease-out);
+}
+.ndb-bar-count {
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-primary);
-  min-width: 30px;
+  min-width: 26px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.ndb-bar-hours {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  min-width: 34px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Linha de mês (visão anual) ── */
+.ndb-month-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.ndb-month-row:last-of-type { margin-bottom: 0; }
+.ndb-month-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: 28px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ndb-month-name--cur {
+  color: var(--accent);
+  font-weight: 800;
+}
+.ndb-annual-avg {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--divider);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
   text-align: right;
 }
 
-.breakdown-hours {
-  font-size: 13px;
-  color: var(--accent);
-  font-weight: 600;
-  min-width: 42px;
-  text-align: right;
-}
+/* reutiliza .escala-pendente de MinhaEscala.css */

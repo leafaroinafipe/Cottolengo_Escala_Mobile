@@ -10,10 +10,11 @@ function padDate(n) { return String(n).padStart(2, '0'); }
 
 export default function Home() {
   const { profile, user } = useAuth();
-  const [todayShift,  setTodayShift]  = useState(null);
-  const [nextShifts,  setNextShifts]  = useState([]);
-  const [pendingReqs, setPendingReqs] = useState(0);
-  const [loading,     setLoading]     = useState(true);
+  const [todayShift,   setTodayShift]   = useState(null);
+  const [nextShifts,   setNextShifts]   = useState([]);
+  const [pendingReqs,  setPendingReqs]  = useState(0);
+  const [loading,      setLoading]      = useState(true);
+  const [isPublished,  setIsPublished]  = useState(false);
 
   const today = new Date();
   const todayKey = `${today.getFullYear()}-${padDate(today.getMonth()+1)}-${padDate(today.getDate())}`;
@@ -22,8 +23,16 @@ export default function Home() {
   useEffect(() => {
     if (!nurseId) { setLoading(false); return; }
     const monthNum = today.getMonth() + 1;
-    getDoc(doc(db, 'escalas', `${nurseId}_${today.getFullYear()}_${monthNum}`))
+    const yr = today.getFullYear();
+    getDoc(doc(db, 'publicacoes', `${yr}_${monthNum}`))
+      .then(pubSnap => {
+        const published = pubSnap.exists() && pubSnap.data().publicado === true;
+        setIsPublished(published);
+        if (!published) { setLoading(false); return null; }
+        return getDoc(doc(db, 'escalas', `${nurseId}_${yr}_${monthNum}`));
+      })
       .then(snap => {
+        if (!snap) return;
         const day = today.getDate();
         if (snap.exists()) {
           const data = snap.data();
@@ -36,9 +45,6 @@ export default function Home() {
             }
           }
           setNextShifts(upcoming);
-        } else {
-          setTodayShift(null);
-          setNextShifts([]);
         }
         setLoading(false);
       })
@@ -76,7 +82,9 @@ export default function Home() {
         <>
           <div className="today-card">
             <p className="today-label">Hoje · {padDate(today.getDate())} de {MONTHS[today.getMonth()]}</p>
-            {todayShift ? (
+            {!isPublished ? (
+              <p className="today-rest" style={{ fontSize: 13 }}>Escala em preparação&hellip;</p>
+            ) : todayShift ? (
               <div className="today-shift">
                 <span
                   className="shift-chip"
@@ -94,7 +102,7 @@ export default function Home() {
             )}
           </div>
 
-          {nextShifts.length > 0 && (
+          {isPublished && nextShifts.length > 0 && (
             <div className="upcoming-section">
               <h3 className="section-title">Próximos turnos</h3>
               <div className="upcoming-list">

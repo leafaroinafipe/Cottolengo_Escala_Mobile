@@ -1,0 +1,41 @@
+.update-banner {
+  position: fixed;
+  top: calc(var(--safe-top) + 12px);
+  left: 16px;
+  right: 16px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--r-full);
+  box-shadow: var(--shadow-raised), 0 0 0 1px var(--accent-border);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  animation: banner-in 0.35s var(--ease-out);
+}
+.update-banner svg { color: var(--accent); flex-shrink: 0; }
+
+.update-banner-btn {
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 6px 14px;
+  background: var(--accent-grad);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-full);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--shadow-glow);
+  transition: box-shadow var(--transition);
+}
+.update-banner-btn:hover { box-shadow: var(--shadow-glow-lg); }
+
+@keyframes banner-in {
+  from { opacity: 0; transform: translateY(-12px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}

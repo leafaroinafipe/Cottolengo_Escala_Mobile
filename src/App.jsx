@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 import AppShell from './components/AppShell';
+import UpdatePrompt from './components/UpdatePrompt';
 
 /* Login não é lazy (primeira tela visível) */
 import Login from './pages/Login';
@@ -35,6 +36,7 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <UpdatePrompt />
         <Suspense fallback={<PageFallback />}>
           <Routes>
             <Route path="/login" element={<Login />} />
@@ -46,7 +48,7 @@ export default function App() {
                 </PrivateRoute>
               }
             >
-              <Route index element={<RoleRoute coord={<CoordHome />} nurse={<Home />} />} />
+              <Route index element={<RoleRoute coord={<CoordHome />} nurse={<Navigate to="/escala" replace />} />} />
               <Route path="escala" element={<RoleRoute coord={<CoordEscala />} nurse={<MinhaEscala />} />} />
               <Route path="solicitacoes" element={<RoleRoute coord={<CoordSolicitacoes />} nurse={<Solicitacoes />} />} />
               <Route path="perfil"    element={<Perfil />} />

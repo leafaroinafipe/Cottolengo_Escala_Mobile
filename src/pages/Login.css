@@ -144,3 +144,310 @@
 .reset-success-icon  { font-size: 44px; line-height: 1; }
 .reset-success-title { font-size: 18px; font-weight: 700; }
 .reset-success-desc  { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+
+/* ─────────────────────────────────────────
+   Mascot
+───────────────────────────────────────── */
+.mascot {
+  position: relative;
+  width: 90px;
+  height: 86px;
+  margin: 0 auto 8px;
+  user-select: none;
+  pointer-events: none;
+}
+
+.mascot-head {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 64px;
+  height: 58px;
+  background: var(--bg-elevated);
+  border-radius: 50% 50% 44% 44%;
+  border: 2px solid var(--border-strong);
+  box-shadow: 0 4px 18px rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  z-index: 2;
+}
+
+/* Ears */
+.mascot-head::before,
+.mascot-head::after {
+  content: '';
+  position: absolute;
+  top: -13px;
+  width: 20px;
+  height: 20px;
+  background: var(--bg-elevated);
+  border: 2px solid var(--border-strong);
+  border-radius: 50% 50% 0 0;
+  border-bottom: none;
+}
+.mascot-head::before { left: 6px; }
+.mascot-head::after  { right: 6px; }
+
+.mascot-eye {
+  width: 16px;
+  height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  position: relative;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.mascot-pupil {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  background: #111827;
+  border-radius: 50%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  transition: transform 0.3s ease;
+}
+.mascot-pupil::after {
+  content: '';
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: rgba(255,255,255,0.9);
+  border-radius: 50%;
+  top: 1px;
+  left: 1px;
+}
+
+.mascot-paw {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  background: var(--bg-elevated);
+  border: 2px solid var(--border-strong);
+  border-radius: 50%;
+  bottom: 0;
+  z-index: 1;
+  transition: transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+}
+.mascot-paw--left  { left: 8px;  transform-origin: 100% 100%; }
+.mascot-paw--right { right: 8px; transform-origin: 0%   100%; }
+
+/* Toes */
+.mascot-paw::before,
+.mascot-paw::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--bg-elevated);
+  border: 2px solid var(--border-strong);
+  border-radius: 50%;
+  top: -5px;
+}
+.mascot-paw--left::before  { left: 0; }
+.mascot-paw--left::after   { right: 0; }
+.mascot-paw--right::before { left: 0; }
+.mascot-paw--right::after  { right: 0; }
+
+/* Idle — centered pupils, paws at rest */
+.mascot--idle .mascot-pupil { transform: translate(-50%, -50%); }
+
+/* Watching — pupils drift down toward the field */
+.mascot--watching .mascot-pupil { transform: translate(-50%, -20%); }
+
+/* Covering — paws swing up to hide eyes */
+.mascot--covering .mascot-paw--left {
+  transform: translateY(-54px) translateX(10px) rotate(-22deg);
+  z-index: 4;
+}
+.mascot--covering .mascot-paw--right {
+  transform: translateY(-54px) translateX(-10px) rotate(22deg);
+  z-index: 4;
+}
+
+/* Peeking — paws half-raised, eyes peek down */
+.mascot--peeking .mascot-paw--left {
+  transform: translateY(-36px) translateX(5px) rotate(-10deg);
+  z-index: 4;
+}
+.mascot--peeking .mascot-paw--right {
+  transform: translateY(-36px) translateX(-5px) rotate(10deg);
+  z-index: 4;
+}
+.mascot--peeking .mascot-pupil { transform: translate(-50%, -15%); }
+
+/* ─────────────────────────────────────────
+   Biometric gate
+───────────────────────────────────────── */
+.bio-gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 0 4px;
+}
+
+.bio-btn {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--accent-grad);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: var(--shadow-glow-lg);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.bio-btn:hover:not(:disabled) {
+  transform: scale(1.07);
+  box-shadow: 0 0 0 10px rgba(242,94,39,0.12), var(--shadow-glow-lg);
+}
+.bio-btn:active:not(:disabled) { transform: scale(0.95); }
+.bio-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.bio-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.bio-skip {
+  font-size: 12px;
+  color: var(--accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  opacity: 0.8;
+  transition: opacity var(--transition);
+}
+.bio-skip:hover { opacity: 1; }
+
+/* Bio offer modal */
+.bio-offer-modal {
+  max-width: 320px;
+  width: calc(100% - 48px);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 32px 28px;
+}
+
+.bio-offer-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(242,94,39,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.bio-offer-title {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.bio-offer-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ─────────────────────────────────────────
+   Install banner
+───────────────────────────────────────── */
+.install-banner {
+  position: fixed;
+  top: calc(var(--safe-top, env(safe-area-inset-top, 0px)) + 12px);
+  left: 16px;
+  right: 16px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-full, 999px);
+  box-shadow: var(--shadow-raised), 0 0 0 1px rgba(242,94,39,0.12);
+  font-size: 13px;
+  color: var(--text-primary);
+  animation: install-banner-in 0.35s var(--ease-out, ease-out);
+}
+
+.install-banner-icon { font-size: 20px; flex-shrink: 0; }
+
+.install-banner-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.install-banner-text strong { font-size: 13px; font-weight: 700; }
+.install-banner-text span {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.install-banner-btn {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  background: var(--accent-grad);
+  color: #fff;
+  border: none;
+  border-radius: var(--r-full, 999px);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--shadow-glow);
+  transition: box-shadow var(--transition);
+  white-space: nowrap;
+}
+.install-banner-btn:hover { box-shadow: var(--shadow-glow-lg); }
+
+.install-banner-close {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: color var(--transition), background var(--transition);
+}
+.install-banner-close:hover {
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+}
+
+@keyframes install-banner-in {
+  from { opacity: 0; transform: translateY(-10px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}

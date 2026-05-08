@@ -2,13 +2,6 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import './BottomNav.css';
 
-const IconHome = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-    <polyline points="9 22 9 12 15 12 15 22"/>
-  </svg>
-);
-
 const IconCalendar = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="4" width="18" height="18" rx="2"/>
@@ -32,6 +25,13 @@ const IconChart = () => (
   </svg>
 );
 
+const IconHome = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+    <polyline points="9 22 9 12 15 12 15 22"/>
+  </svg>
+);
+
 const IconUsers = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -41,18 +41,22 @@ const IconUsers = () => (
   </svg>
 );
 
-const BASE_NAV = [
-  { to: '/',             label: 'Início',  icon: <IconHome /> },
-  { to: '/escala',       label: 'Escala',  icon: <IconCalendar /> },
-  { to: '/solicitacoes', label: 'Pedidos', icon: <IconRequests /> },
+const NURSE_NAV = [
+  { to: '/escala',       label: 'Escala',    icon: <IconCalendar /> },
+  { to: '/solicitacoes', label: 'Pedidos',   icon: <IconRequests /> },
+  { to: '/dashboard',    label: 'Dashboard', icon: <IconChart /> },
 ];
 
-const NURSE_EXTRA = { to: '/dashboard', label: 'Dashboard', icon: <IconChart /> };
-const COORD_EXTRA = { to: '/equipe',    label: 'Equipe',    icon: <IconUsers /> };
+const COORD_NAV = [
+  { to: '/',             label: 'Início',  icon: <IconHome />,     end: true },
+  { to: '/escala',       label: 'Escala',  icon: <IconCalendar /> },
+  { to: '/solicitacoes', label: 'Pedidos', icon: <IconRequests /> },
+  { to: '/equipe',       label: 'Equipe',  icon: <IconUsers /> },
+];
 
 export default function BottomNav() {
   const { isCoordinator } = useAuth();
-  const nav = [...BASE_NAV, isCoordinator ? COORD_EXTRA : NURSE_EXTRA];
+  const nav = isCoordinator ? COORD_NAV : NURSE_NAV;
 
   return (
     <nav className="bottom-nav">
@@ -60,7 +64,7 @@ export default function BottomNav() {
         <NavLink
           key={item.to}
           to={item.to}
-          end={item.to === '/'}
+          end={item.end ?? false}
           className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}
         >
           <span className="bottom-nav-icon">{item.icon}</span>

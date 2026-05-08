@@ -103,15 +103,92 @@ export default function Solicitacoes() {
   );
 }
 
+/* ── Helpers de data (sem timezone shift) ── */
+function nextDay(dateStr) {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m - 1, d + 1);
+  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+}
+function datesBetween(start, end) {
+  const out = [];
+  let cur = start;
+  while (cur <= end) { out.push(cur); cur = nextDay(cur); }
+  return out;
+}
+function fmtDate(str) {
+  if (!str) return str;
+  const [y, m, d] = str.split('-');
+  return `${d}/${m}/${y}`;
+}
+
 function NovaModal({ nurseId, nurseName, nurses, tipo, setTipo, onClose }) {
-  const [form,   setForm]   = useState({});
-  const [saving, setSaving] = useState(false);
-  const [error,  setError]  = useState('');
+  const [form,         setForm]         = useState({});
+  const [saving,       setSaving]       = useState(false);
+  const [error,        setError]        = useState('');
+  const [blockedDates, setBlockedDates] = useState({}); // { 'YYYY-MM-DD': 'Nome da colega' }
+  const [loadingBlock, setLoadingBlock] = useState(true);
+
+  /* Carrega todas as solicitações pendentes para detectar conflitos */
+  useEffect(() => {
+    getDocs(query(collection(db, 'solicitacoes'), where('status', '==', 'pendente')))
+      .then(snap => {
+        const blocked = {};
+        snap.docs.forEach(d => {
+          const r = d.data();
+          const label = r.nurseId === nurseId
+            ? 'você mesma'
+            : (r.nomeFuncionaria ?? 'uma colega');
+
+          const mark = (dateStr) => {
+            if (dateStr && !blocked[dateStr]) blocked[dateStr] = label;
+          };
+
+          if (r.tipo === 'folga') {
+            mark(r.dataFolga);
+          } else if (r.tipo === 'swap') {
+            mark(r.dataOrigem);
+            mark(r.dataTroca);
+          } else if (r.tipo === 'ferias' && r.dataInicio && r.dataFim) {
+            datesBetween(r.dataInicio, r.dataFim).forEach(mark);
+          }
+        });
+        setBlockedDates(blocked);
+      })
+      .catch(() => {}) // falha silenciosa — não bloqueia o formulário
+      .finally(() => setLoadingBlock(false));
+  }, [nurseId]);
+
+  function conflictFor(dateStr) {
+    return dateStr ? blockedDates[dateStr] ?? null : null;
+  }
+
+  function getDatesFromForm() {
+    if (tipo === 'folga')  return form.dataFolga ? [form.dataFolga] : [];
+    if (tipo === 'swap')   return [form.dataOrigem, form.dataTroca].filter(Boolean);
+    if (tipo === 'ferias' && form.dataInicio && form.dataFim)
+      return datesBetween(form.dataInicio, form.dataFim);
+    return [];
+  }
 
   async function handleSave(e) {
     e.preventDefault();
-    setSaving(true);
     setError('');
+
+    /* Verifica conflito antes de enviar */
+    const datesToCheck = getDatesFromForm();
+    for (const d of datesToCheck) {
+      const who = blockedDates[d];
+      if (who) {
+        setError(
+          who === 'você mesma'
+            ? `Você já tem uma solicitação pendente para ${fmtDate(d)}. Aguarde a resolução antes de criar outra.`
+            : `O dia ${fmtDate(d)} já está reservado por ${who}. Aguarde a aprovação ou rejeição do pedido dela.`
+        );
+        return;
+      }
+    }
+
+    setSaving(true);
     try {
       const base = {
         nurseId,
@@ -129,7 +206,7 @@ function NovaModal({ nurseId, nurseName, nurses, tipo, setTipo, onClose }) {
     }
   }
 
-  const f = (k, v) => setForm(prev => ({ ...prev, [k]: v }));
+  const f = (k, v) => { setForm(prev => ({ ...prev, [k]: v })); setError(''); };
 
   return (
     <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -156,6 +233,11 @@ function NovaModal({ nurseId, nurseName, nurses, tipo, setTipo, onClose }) {
               <div className="form-field">
                 <label>Sua data</label>
                 <input type="date" required onChange={e => f('dataOrigem', e.target.value)} />
+                {conflictFor(form.dataOrigem) && (
+                  <p className="field-warning">
+                    ⚠ Este dia já tem solicitação de {conflictFor(form.dataOrigem)}
+                  </p>
+                )}
               </div>
               <div className="form-field">
                 <label>Seu turno</label>
@@ -180,6 +262,11 @@ function NovaModal({ nurseId, nurseName, nurses, tipo, setTipo, onClose }) {
               <div className="form-field">
                 <label>Data da colega</label>
                 <input type="date" required onChange={e => f('dataTroca', e.target.value)} />
+                {conflictFor(form.dataTroca) && (
+                  <p className="field-warning">
+                    ⚠ Este dia já tem solicitação de {conflictFor(form.dataTroca)}
+                  </p>
+                )}
               </div>
               <div className="form-field">
                 <label>Turno da colega</label>
@@ -198,6 +285,11 @@ function NovaModal({ nurseId, nurseName, nurses, tipo, setTipo, onClose }) {
               <div className="form-field">
                 <label>Data da folga</label>
                 <input type="date" required onChange={e => f('dataFolga', e.target.value)} />
+                {conflictFor(form.dataFolga) && (
+                  <p className="field-warning">
+                    ⚠ Este dia já tem solicitação de {conflictFor(form.dataFolga)}
+                  </p>
+                )}
               </div>
               <div className="form-field">
                 <label>Motivo (opcional)</label>
@@ -211,10 +303,20 @@ function NovaModal({ nurseId, nurseName, nurses, tipo, setTipo, onClose }) {
               <div className="form-field">
                 <label>Data de início</label>
                 <input type="date" required onChange={e => f('dataInicio', e.target.value)} />
+                {conflictFor(form.dataInicio) && (
+                  <p className="field-warning">
+                    ⚠ Este dia já tem solicitação de {conflictFor(form.dataInicio)}
+                  </p>
+                )}
               </div>
               <div className="form-field">
                 <label>Data de fim</label>
                 <input type="date" required onChange={e => f('dataFim', e.target.value)} />
+                {conflictFor(form.dataFim) && (
+                  <p className="field-warning">
+                    ⚠ Este dia já tem solicitação de {conflictFor(form.dataFim)}
+                  </p>
+                )}
               </div>
             </>
           )}
