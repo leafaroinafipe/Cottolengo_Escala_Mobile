@@ -292,9 +292,8 @@ export default function CoordEscala() {
                   const s = SHIFTS[code];
                   return (
                     <div key={n.id} className="day-detail-row">
-                      <div className="day-detail-avatar">{getInitials(n.name)}</div>
+                      <span className="cal-shift cal-shift--fixed" style={{ background: s.color, color: s.text }}>{code}</span>
                       <span className="day-detail-name">{n.name}</span>
-                      <span className="cal-shift" style={{ background: s.color, color: s.text }}>{code}</span>
                       <span className="day-detail-hours">{s.hours}h</span>
                     </div>
                   );
@@ -312,11 +311,14 @@ export default function CoordEscala() {
       {/* ── Legenda ── */}
       <div className="shifts-legend-mobile">
         {Object.entries(SHIFTS).filter(([k]) => k !== 'OFF').map(([code, s]) => (
-          <div key={code} className="legend-row">
-            <span className="cal-shift" style={{ background: s.color, color: s.text }}>{code}</span>
-            <span style={{ fontSize: 13, color: 'var(--text-secondary)' }}>{s.name}</span>
-            {s.hours > 0 && <span className="legend-hours">{s.hours}h</span>}
-          </div>
+          <span
+            key={code}
+            className="cal-shift cal-shift--fixed"
+            style={{ background: s.color, color: s.text }}
+            title={`${s.name}${s.hours > 0 ? ` · ${s.hours}h` : ''}`}
+          >
+            {code}
+          </span>
         ))}
       </div>
     </div>

@@ -185,3 +185,11 @@
   font-weight: 600;
   color: var(--text-muted);
 }
+
+/* Chip de turno com largura fixa (N e M1 ficam iguais) */
+.cal-shift--fixed {
+  min-width: 38px;
+  text-align: center;
+  justify-content: center;
+  flex-shrink: 0;
+}

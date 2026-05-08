@@ -71,24 +71,6 @@ const AUTH_ERRORS = {
   'auth/network-request-failed': 'Sem conexão. Verifique sua internet.',
 };
 
-/* ── Mascote ── */
-function Mascot({ state }) {
-  return (
-    <div className={`mascot mascot--${state}`} aria-hidden="true">
-      <div className="mascot-head">
-        <div className="mascot-eye mascot-eye--left">
-          <div className="mascot-pupil" />
-        </div>
-        <div className="mascot-eye mascot-eye--right">
-          <div className="mascot-pupil" />
-        </div>
-      </div>
-      <div className="mascot-paw mascot-paw--left" />
-      <div className="mascot-paw mascot-paw--right" />
-    </div>
-  );
-}
-
 export default function Login() {
   const { login, user } = useAuth();
   const navigate        = useNavigate();
@@ -107,9 +89,6 @@ export default function Login() {
   const [resetSent,    setResetSent]    = useState(false);
   const [resetError,   setResetError]   = useState('');
   const [resetLoading, setResetLoading] = useState(false);
-
-  /* ── Mascot state: idle | watching | covering | peeking ── */
-  const [mascotState, setMascotState] = useState('idle');
 
   /* ── Biometric ── */
   const [bioAvailable,  setBioAvailable]  = useState(false);
@@ -197,18 +176,6 @@ export default function Login() {
     setResetError('');
   }
 
-  /* ── Mascot input handlers ── */
-  const onEmailFocus    = () => setMascotState('watching');
-  const onEmailBlur     = () => setMascotState('idle');
-  const onPasswordFocus = () => setMascotState(showPass ? 'peeking' : 'covering');
-  const onPasswordBlur  = () => setMascotState('idle');
-
-  useEffect(() => {
-    if (mascotState === 'covering' || mascotState === 'peeking') {
-      setMascotState(showPass ? 'peeking' : 'covering');
-    }
-  }, [showPass]); // eslint-disable-line react-hooks/exhaustive-deps
-
   return (
     <div className="login-page">
       <div className="login-glow" aria-hidden="true" />
@@ -232,9 +199,6 @@ export default function Login() {
       )}
 
       <div className="login-content slide-up">
-        {/* ── Mascote ── */}
-        <Mascot state={mascotState} />
-
         <div className="login-header">
           <div className="login-icon">C</div>
           <h1 className="login-title">Cottolengo</h1>
@@ -285,8 +249,6 @@ export default function Login() {
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                onFocus={onEmailFocus}
-                onBlur={onEmailBlur}
                 placeholder="seu@email.com"
                 required
                 autoComplete="email"
@@ -311,8 +273,6 @@ export default function Login() {
                   type={showPass ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  onFocus={onPasswordFocus}
-                  onBlur={onPasswordBlur}
                   placeholder="••••••••"
                   required
                   autoComplete="current-password"
