@@ -133,11 +133,10 @@ export default function Solicitacoes() {
   );
 }
 
-/* ── Card retrátil da enfermeira ── */
+/* ── Card da enfermeira ── */
 function NurseRequestCard({ r }) {
-  const [expanded, setExpanded] = useState(false);
-  const preview     = buildPreview(r);
   const statusBadge = STATUS_BADGE[r.status] ?? 'badge-pending';
+  const ts = r.createdAt ?? r.criadaEm;
 
   let dateBlock = null;
   if (r.tipo === 'swap') {
@@ -185,40 +184,30 @@ function NurseRequestCard({ r }) {
   }
 
   return (
-    <div className={`nr-card nr-card--${r.tipo ?? 'swap'}${expanded ? ' nr-card--open' : ''}`}>
-      <button className="nr-header" onClick={() => setExpanded(p => !p)} aria-expanded={expanded}>
-        <div className="nr-header-main">
-          <div className="nr-header-left">
-            <span className="nr-type-icon" aria-hidden>{TIPO_ICON[r.tipo] ?? '📋'}</span>
-            <span className="nr-type-label">{TIPO_LABELS[r.tipo] ?? r.tipo}</span>
-          </div>
-          <div className="nr-header-right">
-            <span className={`badge ${statusBadge}`}>{r.status}</span>
-            <svg
-              className={`nr-chevron${expanded ? ' nr-chevron--up' : ''}`}
-              width="14" height="14" viewBox="0 0 24 24"
-              fill="none" stroke="currentColor" strokeWidth="2.5"
-              strokeLinecap="round" strokeLinejoin="round"
-              aria-hidden
-            >
-              <polyline points="6 9 12 15 18 9"/>
-            </svg>
-          </div>
+    <div className={`nr-card nr-card--${r.tipo ?? 'swap'}`}>
+      <div className="nr-card-top">
+        <div className="nr-header-left">
+          <span className="nr-type-icon" aria-hidden>{TIPO_ICON[r.tipo] ?? '📋'}</span>
+          <span className="nr-type-label">{TIPO_LABELS[r.tipo] ?? r.tipo}</span>
         </div>
-        {preview && <div className="nr-preview">{preview}</div>}
-      </button>
-
-      {expanded && (
-        <div className="nr-body">
-          {dateBlock}
-          <div className="nr-meta">
-            <span>Aberta {timeAgo(r.createdAt ?? r.criadaEm)}</span>
-            {r.observacao && <span className="nr-obs">💬 {r.observacao}</span>}
-          </div>
+        <span className={`badge ${statusBadge}`}>{r.status}</span>
+      </div>
+      <div className="nr-body">
+        {dateBlock}
+        <div className="nr-meta">
+          {ts && <span>📅 {fmtTsFull(ts)}</span>}
+          {r.observacao && <span className="nr-obs">💬 {r.observacao}</span>}
         </div>
-      )}
+      </div>
     </div>
   );
+}
+
+function fmtTsFull(ts) {
+  const d = ts?.toDate?.() ?? null;
+  if (!d) return null;
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    + ' • ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 }
 
 /* ── Helpers de data (sem timezone shift) ── */
@@ -292,16 +281,12 @@ function NovaModal({ nurseId, nurseName, nurses, tipo, setTipo, onClose }) {
     e.preventDefault();
     setError('');
 
-    /* Verifica conflito antes de enviar */
+    /* Verifica se a própria enfermeira já tem solicitação pendente para o mesmo dia */
     const datesToCheck = getDatesFromForm();
     for (const d of datesToCheck) {
       const who = blockedDates[d];
-      if (who) {
-        setError(
-          who === 'você mesma'
-            ? `Você já tem uma solicitação pendente para ${fmtDate(d)}. Aguarde a resolução antes de criar outra.`
-            : `O dia ${fmtDate(d)} já está reservado por ${who}. Aguarde a aprovação ou rejeição do pedido dela.`
-        );
+      if (who === 'você mesma') {
+        setError(`Você já tem uma solicitação pendente para ${fmtDate(d)}. Aguarde a resolução antes de criar outra.`);
         return;
       }
     }
