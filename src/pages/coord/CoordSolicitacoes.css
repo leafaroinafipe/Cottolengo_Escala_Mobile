@@ -29,6 +29,22 @@
 .csr-card--aprovada  { border-color: rgba(52, 211, 153, 0.25); }
 .csr-card--rejeitada { border-color: rgba(239, 68, 68, 0.20); }
 
+/* ── Nome da enfermeira no header ── */
+.csr-header-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.csr-nurse-name {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ── Header clicável ── */
 .csr-header {
   width: 100%;
@@ -179,6 +195,17 @@
 }
 .csr-meta--ok { color: var(--success); font-weight: 600; }
 .csr-meta--no { color: var(--danger);  font-weight: 600; }
+
+/* ── Aviso de dados incompletos ── */
+.csr-warning {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.10);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: var(--r-sm);
+  padding: 6px 10px;
+}
 
 /* ── Botões de ação ── */
 .csr-actions {
@@ -386,3 +413,117 @@
   color: #fff;
   box-shadow: 0 3px 10px rgba(34, 197, 94, 0.35);
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   Resumo — grupos por tipo (accordion)
+   ════════════════════════════════════════════════════════════════════ */
+
+.rsm-group-card {
+  background: var(--bg-surface);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  position: relative;
+}
+.rsm-group-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+}
+.rsm-group-card--swap::before   { background: var(--accent); }
+.rsm-group-card--folga::before  { background: #38bdf8; }
+.rsm-group-card--ferias::before { background: #34d399; }
+
+.rsm-group-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px 12px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition);
+}
+.rsm-group-header:active { background: var(--bg-elevated); }
+
+.rsm-group-icon  { font-size: 17px; flex-shrink: 0; line-height: 1; }
+.rsm-group-label { font-size: 14px; font-weight: 700; color: var(--text-primary); flex: 1; }
+
+.rsm-group-counts {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.rsm-count-badge {
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: var(--r-full);
+  padding: 2px 7px;
+  white-space: nowrap;
+}
+.rsm-count-pending  { background: rgba(251, 191, 36, 0.18); color: #fbbf24; }
+.rsm-count-approved { background: rgba( 34, 197, 94, 0.15); color: #22c55e; }
+.rsm-count-rejected { background: rgba(239,  68, 68, 0.15); color: #ef4444; }
+
+.rsm-group-chevron { color: var(--text-muted); transition: transform 0.2s ease; flex-shrink: 0; }
+.rsm-group-chevron--up { transform: rotate(180deg); }
+
+.rsm-group-body { border-top: 1px solid var(--divider); }
+
+/* ── Item dentro do grupo ── */
+.rsm-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px 10px 16px;
+  border-bottom: 1px solid var(--divider);
+}
+.rsm-item:last-child { border-bottom: none; }
+
+.rsm-item-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: var(--accent-grad);
+  color: #fff;
+  font-size: 11px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.rsm-item-info {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.rsm-item-name { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.rsm-item-date { font-size: 11px; color: var(--text-secondary); }
+.rsm-item-status { flex-shrink: 0; align-self: center; }
+
+/* Troca — layout com ⇄ */
+.rsm-item--swap { align-items: flex-start; }
+.rsm-item--swap .rsm-item-status { margin-top: 2px; }
+
+.rsm-item-swap-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.rsm-item-swap-party { display: flex; flex-direction: column; gap: 2px; }
+.rsm-item-swap-name  { font-size: 12px; font-weight: 700; color: var(--text-primary); }
+.rsm-item-swap-date  { font-size: 10px; color: var(--text-secondary); }
+.rsm-item-swap-shift {
+  display: inline-flex; align-items: center;
+  padding: 1px 5px;
+  border-radius: var(--r-sm);
+  font-size: 9px; font-weight: 700;
+  background: var(--accent-soft);
+  color: var(--accent-bright);
+  width: fit-content;
+}
+.rsm-item-swap-arrow { font-size: 16px; color: var(--accent); font-weight: 700; flex-shrink: 0; }

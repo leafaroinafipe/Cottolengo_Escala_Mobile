@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   collection, onSnapshot, doc, writeBatch, runTransaction,
   serverTimestamp, query, orderBy,
@@ -34,6 +34,15 @@ function fmtTs(ts) {
     + ' • ' + d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
 }
 
+/* Converte qualquer representação de data do Firestore para string "DD/MM/AAAA" */
+function toDateStr(val) {
+  if (!val) return null;
+  if (typeof val?.toDate === 'function') return val.toDate().toLocaleDateString('pt-BR');
+  if (typeof val === 'number') return new Date(val).toLocaleDateString('pt-BR');
+  if (typeof val === 'string' && val.trim()) return val.trim();
+  return null;
+}
+
 function normalizeRequest(id, d) {
   const statusMap = { pending: 'pendente', approved: 'aprovada', rejected: 'rejeitada' };
   const tipoLegMap = { FE: 'ferias', AT: 'ferias', OFF: 'folga', troca: 'swap' };
@@ -47,11 +56,12 @@ function normalizeRequest(id, d) {
     nomeTroca:       d.nomeTroca       ?? d.nursecambio,
     turnoOrigem:     d.turnoOrigem     ?? d.turnoRichiedente,
     turnoTroca:      d.turnoTroca      ?? d.turnoCambio,
-    dataFolga:       d.dataFolga?.toDate?.()?.toLocaleDateString('pt-BR') ?? d.dataFolga,
-    dataOrigem:      d.dataOrigem      ?? d.dataRichiedente?.toDate?.()?.toLocaleDateString('pt-BR'),
-    dataTroca:       d.dataTroca       ?? d.dataCambio?.toDate?.()?.toLocaleDateString('pt-BR'),
-    dataInicio:      d.dataInicio      ?? d.startDate?.toDate?.()?.toLocaleDateString('pt-BR'),
-    dataFim:         d.dataFim         ?? d.endDate?.toDate?.()?.toLocaleDateString('pt-BR'),
+    /* dataFolga: tenta campo principal + aliases do app legado */
+    dataFolga:  toDateStr(d.dataFolga) ?? toDateStr(d.data) ?? toDateStr(d.date) ?? toDateStr(d.dataRiposo),
+    dataOrigem: toDateStr(d.dataOrigem) ?? toDateStr(d.dataRichiedente),
+    dataTroca:  toDateStr(d.dataTroca) ?? toDateStr(d.dataCambio),
+    dataInicio: toDateStr(d.dataInicio) ?? toDateStr(d.startDate),
+    dataFim:    toDateStr(d.dataFim)    ?? toDateStr(d.endDate),
   };
 }
 
@@ -93,6 +103,24 @@ function primaryIso(r) {
   }
   /* tipo desconhecido — varre todos os campos de data */
   return toIso(r.dataFolga) || toIso(r.dataInicio) || toIso(r.dataOrigem) || toIso(r.dataTroca) || '';
+}
+
+/* Retorna true se a data primária da solicitação já passou */
+function isPastDue(r) {
+  const iso = primaryIso(r);
+  if (!iso) return false;
+  const [y, m, d] = iso.split('-').map(Number);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  return new Date(y, m - 1, d) < today;
+}
+
+/* Dias restantes até a data primária (negativo = já venceu) */
+function daysUntilDue(r) {
+  const iso = primaryIso(r);
+  if (!iso) return null;
+  const [y, m, d] = iso.split('-').map(Number);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  return Math.ceil((new Date(y, m - 1, d) - today) / 86400000);
 }
 
 function fmtGroupHeader(iso) {
@@ -171,6 +199,9 @@ export default function CoordSolicitacoes() {
   const [loading,  setLoading]  = useState(true);
   const [toast,    setToast]    = useState(null);
 
+  const autoRejectedRef = useRef(new Set());
+  const notifiedRef     = useRef(new Set());
+
   useEffect(() => {
     const q = query(collection(db, 'solicitacoes'), orderBy('createdAt', 'desc'));
     return onSnapshot(q, snap => {
@@ -178,6 +209,51 @@ export default function CoordSolicitacoes() {
       setLoading(false);
     });
   }, []);
+
+  /* Pede permissão de notificação uma vez */
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  /* Auto-rejeita vencidas; notifica prestes a vencer (≤ 2 dias) */
+  useEffect(() => {
+    if (loading) return;
+    const decidedBy = auth.currentUser?.uid ?? null;
+    const pending = requests.filter(r => r.status === 'pendente');
+
+    const expired = pending.filter(r => isPastDue(r) && !autoRejectedRef.current.has(r.id));
+    if (expired.length > 0) {
+      const batch = writeBatch(db);
+      expired.forEach(r => {
+        autoRejectedRef.current.add(r.id);
+        batch.update(doc(db, 'solicitacoes', r.id), {
+          status: 'rejeitada',
+          rejectedAt: serverTimestamp(),
+          decidedBy,
+          autoRejected: true,
+        });
+      });
+      batch.commit().catch(console.error);
+      setToast({ msg: `${expired.length} solicitação(ões) vencida(s) rejeitada(s) automaticamente.`, type: 'rejeitada' });
+      setTimeout(() => setToast(null), 4000);
+    }
+
+    if ('Notification' in window && Notification.permission === 'granted') {
+      pending.forEach(r => {
+        if (notifiedRef.current.has(r.id)) return;
+        const days = daysUntilDue(r);
+        if (days === null || days < 0 || days > 2) return;
+        notifiedRef.current.add(r.id);
+        const quando = days === 0 ? 'hoje' : days === 1 ? 'amanhã' : 'em 2 dias';
+        new Notification('Solicitação prestes a vencer', {
+          body: `${TYPE_LABEL[r.tipo] ?? 'Solicitação'} de ${r.nomeFuncionaria ?? 'enfermeira'} vence ${quando}.`,
+          tag: `sol-due-${r.id}`,
+        });
+      });
+    }
+  }, [requests, loading]);
 
   async function updateStatus(id, status) {
     const decidedBy = auth.currentUser?.uid ?? null;
@@ -261,24 +337,22 @@ export default function CoordSolicitacoes() {
         ))}
       </div>
 
-      {filter === 'pendente' && (
-        <div className="csr-view-toggle">
-          <button className={`cvt-btn${view === 'lista' ? ' cvt-btn--active' : ''}`} onClick={() => setView('lista')}>Lista</button>
-          <button className={`cvt-btn${view === 'resumo' ? ' cvt-btn--active' : ''}`} onClick={() => setView('resumo')}>Resumo</button>
-        </div>
-      )}
+      <div className="csr-view-toggle">
+        <button className={`cvt-btn${view === 'lista' ? ' cvt-btn--active' : ''}`} onClick={() => setView('lista')}>Lista</button>
+        <button className={`cvt-btn${view === 'resumo' ? ' cvt-btn--active' : ''}`} onClick={() => setView('resumo')}>Resumo</button>
+      </div>
 
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
           <span className="spinner spinner-lg" />
         </div>
+      ) : view === 'resumo' ? (
+        <ResumoView requests={requests} />
       ) : filtered.length === 0 ? (
         <div className="empty-state">
           <p style={{ fontSize: 28 }}>📋</p>
           <p>Nenhuma solicitação {filter}.</p>
         </div>
-      ) : view === 'resumo' && filter === 'pendente' ? (
-        <ResumoView requests={filtered} onUpdate={updateStatus} />
       ) : (
         <div className="sol-list">
           {filtered.map(r => <RequestCard key={r.id} request={r} onUpdate={updateStatus} />)}
@@ -294,65 +368,118 @@ export default function CoordSolicitacoes() {
   );
 }
 
-function ResumoView({ requests, onUpdate }) {
-  const sorted = useMemo(() => {
-    return [...requests].sort((a, b) => {
-      const isoA = primaryIso(a) || '9999-99-99';
-      const isoB = primaryIso(b) || '9999-99-99';
-      if (isoA !== isoB) return isoA.localeCompare(isoB);
-      return (a.createdAt?.toMillis?.() ?? 0) - (b.createdAt?.toMillis?.() ?? 0);
+const STATUS_ORDER = ['pendente', 'aprovada', 'rejeitada'];
+
+function ResumoView({ requests }) {
+  const groups = useMemo(() => {
+    const g = { ferias: [], folga: [], swap: [] };
+    for (const r of requests) {
+      if (g[r.tipo] !== undefined) g[r.tipo].push(r);
+    }
+    const sort = arr => [...arr].sort((a, b) => {
+      const si = STATUS_ORDER.indexOf(a.status) - STATUS_ORDER.indexOf(b.status);
+      if (si !== 0) return si;
+      return (primaryIso(a) || '9').localeCompare(primaryIso(b) || '9');
     });
+    return { ferias: sort(g.ferias), folga: sort(g.folga), swap: sort(g.swap) };
   }, [requests]);
+
+  const types = [
+    { tipo: 'ferias', label: 'Férias',        icon: '✈️' },
+    { tipo: 'folga',  label: 'Folga',          icon: '🏖️' },
+    { tipo: 'swap',   label: 'Troca de turno', icon: '🔄' },
+  ].filter(({ tipo }) => groups[tipo].length > 0);
+
+  if (types.length === 0) {
+    return (
+      <div className="empty-state">
+        <p style={{ fontSize: 28 }}>📋</p>
+        <p>Nenhuma solicitação registrada.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="rsm-container">
-      {sorted.map(r => <ResumoCard key={r.id} request={r} onUpdate={onUpdate} />)}
+      {types.map(({ tipo, label, icon }) => (
+        <TypeGroup key={tipo} tipo={tipo} label={label} icon={icon} items={groups[tipo]} />
+      ))}
     </div>
   );
 }
 
-function ResumoCard({ request: r, onUpdate }) {
-  const [busy, setBusy] = useState(false);
-
-  async function handle(status) {
-    setBusy(true);
-    await onUpdate(r.id, status);
-    setBusy(false);
-  }
-
-  const tipo = r.tipo ?? 'swap';
-  const dateDetail = tipo === 'swap'
-    ? `${fmtDateFull(r.dataOrigem)} ⇄ ${fmtDateFull(r.dataTroca)}`
-    : tipo === 'folga'  ? fmtDateFull(r.dataFolga)
-    : tipo === 'ferias' ? `${fmtDateFull(r.dataInicio)} → ${fmtDateFull(r.dataFim)}`
-    : (() => { const iso = primaryIso(r); return iso ? fmtGroupHeader(iso) : ''; })();
+function TypeGroup({ tipo, label, icon, items }) {
+  const [expanded, setExpanded] = useState(true);
+  const pendentes  = items.filter(r => r.status === 'pendente').length;
+  const aprovadas  = items.filter(r => r.status === 'aprovada').length;
+  const rejeitadas = items.filter(r => r.status === 'rejeitada').length;
 
   return (
-    <div className={`rsm-card rsm-card--${tipo}`}>
-      <div className="rsm-left">
-        <div className="rsm-avatar">{getInitials(r.nomeFuncionaria ?? r.nurseId)}</div>
-        <div className="rsm-info">
-          <span className="rsm-name">{r.nomeFuncionaria ?? r.nurseId}</span>
-          <div className="rsm-detail-row">
-            <span className="rsm-type-chip">{TYPE_ICON[tipo] ?? '📋'} {TYPE_LABEL[tipo] ?? tipo}</span>
-            {dateDetail && <span className="rsm-detail">{dateDetail}</span>}
+    <div className={`rsm-group-card rsm-group-card--${tipo}`}>
+      <button className="rsm-group-header" onClick={() => setExpanded(p => !p)}>
+        <span className="rsm-group-icon">{icon}</span>
+        <span className="rsm-group-label">{label}</span>
+        <div className="rsm-group-counts">
+          {pendentes  > 0 && <span className="rsm-count-badge rsm-count-pending">{pendentes} pendente{pendentes !== 1 ? 's' : ''}</span>}
+          {aprovadas  > 0 && <span className="rsm-count-badge rsm-count-approved">{aprovadas} aprovada{aprovadas !== 1 ? 's' : ''}</span>}
+          {rejeitadas > 0 && <span className="rsm-count-badge rsm-count-rejected">{rejeitadas} rejeitada{rejeitadas !== 1 ? 's' : ''}</span>}
+        </div>
+        <svg
+          className={`rsm-group-chevron${expanded ? ' rsm-group-chevron--up' : ''}`}
+          width="14" height="14" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" strokeWidth="2.5"
+          strokeLinecap="round" strokeLinejoin="round" aria-hidden
+        >
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>
+
+      {expanded && (
+        <div className="rsm-group-body">
+          {items.map(r => <ResumoItem key={r.id} request={r} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ResumoItem({ request: r }) {
+  const statusBadge = r.status === 'aprovada'  ? 'badge-approved'
+                    : r.status === 'rejeitada' ? 'badge-rejected'
+                    : 'badge-pending';
+
+  if (r.tipo === 'swap') {
+    return (
+      <div className="rsm-item rsm-item--swap">
+        <div className="rsm-item-info">
+          <div className="rsm-item-swap-row">
+            <div className="rsm-item-swap-party">
+              <span className="rsm-item-swap-name">{r.nomeFuncionaria?.split(' ')[0] ?? 'Solicitante'}</span>
+              <span className="rsm-item-swap-date">{fmtDateFull(r.dataOrigem)}</span>
+              {r.turnoOrigem && <span className="rsm-item-swap-shift">{r.turnoOrigem}</span>}
+            </div>
+            <span className="rsm-item-swap-arrow">⇄</span>
+            <div className="rsm-item-swap-party">
+              <span className="rsm-item-swap-name">{r.nomeTroca?.split(' ')[0] ?? 'Colega'}</span>
+              <span className="rsm-item-swap-date">{fmtDateFull(r.dataTroca)}</span>
+              {r.turnoTroca && <span className="rsm-item-swap-shift">{r.turnoTroca}</span>}
+            </div>
           </div>
         </div>
+        <span className={`badge ${statusBadge} rsm-item-status`}>{r.status}</span>
       </div>
-      <div className="rsm-actions">
-        <button className="rsm-btn rsm-btn--reject" onClick={() => handle('rejeitada')} disabled={busy} aria-label="Rejeitar">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden>
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-        <button className="rsm-btn rsm-btn--approve" onClick={() => handle('aprovada')} disabled={busy} aria-label="Aprovar">
-          {busy ? <span className="spinner" /> : (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-          )}
-        </button>
+    );
+  }
+
+  return (
+    <div className="rsm-item">
+      <div className="rsm-item-avatar">{getInitials(r.nomeFuncionaria ?? r.nurseId)}</div>
+      <div className="rsm-item-info">
+        <span className="rsm-item-name">{r.nomeFuncionaria ?? r.nurseId ?? '—'}</span>
+        {r.tipo === 'folga'  && <span className="rsm-item-date">📅 {fmtDateFull(r.dataFolga)}</span>}
+        {r.tipo === 'ferias' && <span className="rsm-item-date">📅 {fmtDateFull(r.dataInicio)} → {fmtDateFull(r.dataFim)}</span>}
       </div>
+      <span className={`badge ${statusBadge} rsm-item-status`}>{r.status}</span>
     </div>
   );
 }
@@ -373,6 +500,12 @@ function RequestCard({ request: r, onUpdate }) {
   const created = r.createdAt ?? r.criadaEm;
   const decided = r.status === 'aprovada' ? r.approvedAt : r.status === 'rejeitada' ? r.rejectedAt : null;
 
+  const hasRequiredData =
+    r.tipo === 'folga'  ? !!r.dataFolga
+  : r.tipo === 'ferias' ? !!(r.dataInicio && r.dataFim)
+  : r.tipo === 'swap'   ? !!(r.dataOrigem && r.dataTroca && r.nurseIdTroca)
+  : true;
+
   return (
     <div className={`csr-card csr-card--${r.tipo ?? 'swap'} csr-card--${r.status}${expanded ? ' csr-card--open' : ''}`}>
 
@@ -380,7 +513,10 @@ function RequestCard({ request: r, onUpdate }) {
       <button className="csr-header" onClick={() => setExpanded(p => !p)} aria-expanded={expanded}>
         <div className="csr-header-left">
           <span className="csr-type-icon" aria-hidden>{TYPE_ICON[r.tipo] ?? '📋'}</span>
-          <span className="csr-type-label">{TYPE_LABEL[r.tipo] ?? r.tipo}</span>
+          <div className="csr-header-meta">
+            <span className="csr-type-label">{TYPE_LABEL[r.tipo] ?? r.tipo}</span>
+            <span className="csr-nurse-name">{r.nomeFuncionaria ?? r.nurseId ?? ''}</span>
+          </div>
         </div>
         <div className="csr-header-right">
           <span className={`badge ${statusBadge}`}>{r.status}</span>
@@ -398,12 +534,6 @@ function RequestCard({ request: r, onUpdate }) {
       {/* ── Body expandido ── */}
       {expanded && (
         <div className="csr-body">
-
-          {/* Pessoa */}
-          <div className="csr-person">
-            <div className="csr-avatar">{getInitials(r.nomeFuncionaria ?? r.nurseId)}</div>
-            <span className="csr-name">{r.nomeFuncionaria ?? r.nurseId}</span>
-          </div>
 
           {/* Swap — grid 3 colunas */}
           {r.tipo === 'swap' && (
@@ -450,6 +580,11 @@ function RequestCard({ request: r, onUpdate }) {
             )}
           </div>
 
+          {/* Aviso de dados incompletos */}
+          {!hasRequiredData && (
+            <div className="csr-warning">⚠ Dados incompletos — aprovação bloqueada.</div>
+          )}
+
           {/* Ações — só pendentes */}
           {r.status === 'pendente' && (
             <div className="csr-actions">
@@ -459,7 +594,7 @@ function RequestCard({ request: r, onUpdate }) {
                 </svg>
                 Rejeitar
               </button>
-              <button className="csr-btn csr-btn--approve" onClick={() => handle('aprovada')} disabled={busy}>
+              <button className="csr-btn csr-btn--approve" onClick={() => handle('aprovada')} disabled={busy || !hasRequiredData}>
                 {busy ? <span className="spinner" /> : (
                   <>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
