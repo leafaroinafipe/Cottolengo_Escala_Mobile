@@ -68,6 +68,33 @@ function parseDate(str) {
   return null;
 }
 
+function toIso(str) {
+  const p = parseDate(str);
+  if (!p) return '';
+  return `${p.year}-${String(p.month).padStart(2,'0')}-${String(p.day).padStart(2,'0')}`;
+}
+
+function primaryIso(r) {
+  if (r.tipo === 'folga')  return toIso(r.dataFolga);
+  if (r.tipo === 'ferias') return toIso(r.dataInicio);
+  if (r.tipo === 'swap') {
+    const a = toIso(r.dataOrigem), b = toIso(r.dataTroca);
+    if (!a && !b) return '';
+    if (!a) return b;
+    if (!b) return a;
+    return a <= b ? a : b;
+  }
+  return '';
+}
+
+function fmtGroupHeader(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  if (!y) return iso;
+  return new Date(y, m - 1, d)
+    .toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })
+    .replace(/\./g, '');
+}
+
 /* ── Folga/férias via batch; swap em transação separada (precisa checagem). ── */
 function addScheduleWrites(batch, r) {
   if (r.tipo === 'folga') {
@@ -132,6 +159,7 @@ async function approveSwap(request, decidedBy) {
 export default function CoordSolicitacoes() {
   const [requests, setRequests] = useState([]);
   const [filter,   setFilter]   = useState('pendente');
+  const [view,     setView]     = useState('lista');
   const [loading,  setLoading]  = useState(true);
   const [toast,    setToast]    = useState(null);
 
@@ -225,6 +253,13 @@ export default function CoordSolicitacoes() {
         ))}
       </div>
 
+      {filter === 'pendente' && (
+        <div className="csr-view-toggle">
+          <button className={`cvt-btn${view === 'lista' ? ' cvt-btn--active' : ''}`} onClick={() => setView('lista')}>Lista</button>
+          <button className={`cvt-btn${view === 'resumo' ? ' cvt-btn--active' : ''}`} onClick={() => setView('resumo')}>Resumo</button>
+        </div>
+      )}
+
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}>
           <span className="spinner spinner-lg" />
@@ -234,6 +269,8 @@ export default function CoordSolicitacoes() {
           <p style={{ fontSize: 28 }}>📋</p>
           <p>Nenhuma solicitação {filter}.</p>
         </div>
+      ) : view === 'resumo' && filter === 'pendente' ? (
+        <ResumoView requests={filtered} onUpdate={updateStatus} />
       ) : (
         <div className="sol-list">
           {filtered.map(r => <RequestCard key={r.id} request={r} onUpdate={updateStatus} />)}
@@ -245,6 +282,84 @@ export default function CoordSolicitacoes() {
           {toast.msg}
         </div>
       )}
+    </div>
+  );
+}
+
+function ResumoView({ requests, onUpdate }) {
+  const groups = useMemo(() => {
+    const map = {};
+    for (const r of requests) {
+      const iso = primaryIso(r) || '__sem_data__';
+      if (!map[iso]) map[iso] = [];
+      map[iso].push(r);
+    }
+    return Object.entries(map)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([iso, items]) => ({ iso, items }));
+  }, [requests]);
+
+  return (
+    <div className="rsm-container">
+      {groups.map(({ iso, items }) => (
+        <div key={iso} className={`rsm-group${items.length > 1 ? ' rsm-group--conflict' : ''}`}>
+          <div className="rsm-group-header">
+            <span className="rsm-group-label">
+              {iso === '__sem_data__' ? 'Sem data' : fmtGroupHeader(iso)}
+            </span>
+            <span className="rsm-group-count">{items.length}</span>
+            {items.length > 1 && <span className="rsm-conflict-badge">⚠</span>}
+          </div>
+          {items.map(r => (
+            <ResumoCard key={r.id} request={r} onUpdate={onUpdate} />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ResumoCard({ request: r, onUpdate }) {
+  const [busy, setBusy] = useState(false);
+
+  async function handle(status) {
+    setBusy(true);
+    await onUpdate(r.id, status);
+    setBusy(false);
+  }
+
+  const detailLine = r.tipo === 'swap'
+    ? `${fmtDateFull(r.dataOrigem)} ⇄ ${fmtDateFull(r.dataTroca)}`
+    : r.tipo === 'folga'  ? fmtDateFull(r.dataFolga)
+    : r.tipo === 'ferias' ? `${fmtDateFull(r.dataInicio)} → ${fmtDateFull(r.dataFim)}`
+    : '';
+
+  return (
+    <div className={`rsm-card rsm-card--${r.tipo ?? 'swap'}`}>
+      <div className="rsm-left">
+        <div className="rsm-avatar">{getInitials(r.nomeFuncionaria ?? r.nurseId)}</div>
+        <div className="rsm-info">
+          <span className="rsm-name">{r.nomeFuncionaria ?? r.nurseId}</span>
+          <div className="rsm-detail-row">
+            <span className="rsm-type-chip">{TYPE_ICON[r.tipo]} {TYPE_LABEL[r.tipo] ?? r.tipo}</span>
+            {detailLine && <span className="rsm-detail">{detailLine}</span>}
+          </div>
+        </div>
+      </div>
+      <div className="rsm-actions">
+        <button className="rsm-btn rsm-btn--reject" onClick={() => handle('rejeitada')} disabled={busy} aria-label="Rejeitar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden>
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+        <button className="rsm-btn rsm-btn--approve" onClick={() => handle('aprovada')} disabled={busy} aria-label="Aprovar">
+          {busy ? <span className="spinner" /> : (
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+          )}
+        </button>
+      </div>
     </div>
   );
 }

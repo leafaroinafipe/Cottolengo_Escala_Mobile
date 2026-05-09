@@ -235,3 +235,185 @@
   from { opacity: 0; transform: translateX(-50%) translateY(8px); }
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   Visão Resumo — toggle + grupos por data + cards compactos
+   ════════════════════════════════════════════════════════════════════ */
+
+/* ── Toggle Lista | Resumo ── */
+.csr-view-toggle {
+  display: flex;
+  gap: 6px;
+  padding: 10px 16px 4px;
+}
+.cvt-btn {
+  flex: 1;
+  padding: 7px 12px;
+  border-radius: var(--r-md);
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+.cvt-btn--active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* ── Container da visão Resumo ── */
+.rsm-container {
+  padding: 12px 16px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Grupo por data ── */
+.rsm-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rsm-group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 2px 4px;
+  border-bottom: 1px solid var(--divider);
+}
+.rsm-group-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  flex: 1;
+}
+.rsm-group-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--bg-elevated);
+  border-radius: var(--r-full);
+  padding: 2px 8px;
+}
+.rsm-conflict-badge {
+  font-size: 13px;
+  color: #f59e0b;
+}
+.rsm-group--conflict .rsm-group-label { color: #f59e0b; }
+
+/* ── Card compacto ── */
+.rsm-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: var(--bg-surface);
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  box-shadow: var(--shadow-soft);
+  position: relative;
+  overflow: hidden;
+}
+.rsm-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+}
+.rsm-card--swap::before   { background: var(--accent); }
+.rsm-card--folga::before  { background: #38bdf8; }
+.rsm-card--ferias::before { background: #34d399; }
+
+.rsm-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+.rsm-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent-grad);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px var(--accent-glow);
+}
+.rsm-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.rsm-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rsm-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.rsm-type-chip {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--accent-bright);
+  background: var(--accent-soft);
+  border-radius: var(--r-sm);
+  padding: 2px 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.rsm-detail {
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Botões ícone (aprovar/rejeitar) ── */
+.rsm-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.rsm-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r-md);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity var(--transition), transform var(--transition);
+  flex-shrink: 0;
+}
+.rsm-btn:active   { transform: scale(0.93); }
+.rsm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.rsm-btn--reject  { background: var(--danger-bg); color: var(--danger); }
+.rsm-btn--approve {
+  background: var(--accent-grad);
+  color: #fff;
+  box-shadow: 0 3px 10px var(--accent-glow);
+}
