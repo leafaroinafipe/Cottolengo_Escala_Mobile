@@ -9,7 +9,60 @@ import { SHIFTS } from '../constants/shifts';
 import './Solicitacoes.css';
 
 const TIPO_LABELS = { swap: 'Troca de turno', folga: 'Folga', ferias: 'Férias' };
+const TIPO_ICON   = { swap: '🔄', folga: '🏖️', ferias: '✈️' };
 const STATUS_BADGE = { pendente: 'badge-pending', aprovada: 'badge-approved', rejeitada: 'badge-rejected' };
+
+/* ── Helpers ── */
+function parseDate(str) {
+  if (!str) return null;
+  if (str.includes('-')) {
+    const [y, m, d] = str.split('-').map(Number);
+    return isNaN(y) ? null : { year: y, month: m, day: d };
+  }
+  if (str.includes('/')) {
+    const [d, m, y] = str.split('/').map(Number);
+    return isNaN(y) ? null : { year: y, month: m, day: d };
+  }
+  return null;
+}
+function shortDate(str) {
+  const p = parseDate(str);
+  if (!p) return str ?? '';
+  return `${String(p.day).padStart(2,'0')}/${String(p.month).padStart(2,'0')}`;
+}
+function fmtDateFull(str) {
+  const p = parseDate(str);
+  if (!p) return str ?? '—';
+  return new Date(p.year, p.month - 1, p.day)
+    .toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' })
+    .replace('.', '');
+}
+function buildPreview(r) {
+  if (r.tipo === 'swap') {
+    const a = r.dataOrigem ? `${shortDate(r.dataOrigem)}${r.turnoOrigem ? ` (${r.turnoOrigem})` : ''}` : '';
+    const b = r.dataTroca  ? `${shortDate(r.dataTroca)}${r.turnoTroca   ? ` (${r.turnoTroca})`  : ''}` : '';
+    if (!a && !b) return null;
+    return [a, b].filter(Boolean).join(' ↔ ');
+  }
+  if (r.tipo === 'folga')  return r.dataFolga  ? shortDate(r.dataFolga)  : null;
+  if (r.tipo === 'ferias') {
+    if (r.dataInicio && r.dataFim) return `${shortDate(r.dataInicio)} → ${shortDate(r.dataFim)}`;
+    if (r.dataInicio) return `a partir de ${shortDate(r.dataInicio)}`;
+  }
+  return null;
+}
+function timeAgo(ts) {
+  const date = ts?.toDate?.() ?? null;
+  if (!date) return '—';
+  const min = Math.floor((Date.now() - date.getTime()) / 60000);
+  if (min < 1)  return 'agora';
+  if (min < 60) return `há ${min} min`;
+  const h = Math.floor(min / 60);
+  if (h < 24)   return `há ${h}h`;
+  const d = Math.floor(h / 24);
+  if (d < 7)    return `há ${d}d`;
+  return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+}
 
 export default function Solicitacoes() {
   const { user, profile } = useAuth();
@@ -62,30 +115,7 @@ export default function Solicitacoes() {
         </div>
       ) : (
         <div className="sol-list">
-          {requests.map(r => (
-            <div key={r.id} className="sol-card card slide-up">
-              <div className="sol-card-top">
-                <div>
-                  <p className="sol-tipo">{TIPO_LABELS[r.tipo] ?? r.tipo}</p>
-                  <p className="text-secondary" style={{ fontSize: 12 }}>
-                    {(r.createdAt ?? r.criadaEm)?.toDate?.()?.toLocaleDateString('pt-BR') ?? '—'}
-                  </p>
-                </div>
-                <span className={`badge ${STATUS_BADGE[r.status]}`}>{r.status}</span>
-              </div>
-              {r.tipo === 'swap' && (
-                <p className="sol-detail">
-                  {r.dataOrigem} ({r.turnoOrigem}) → {r.nomeTroca} em {r.dataTroca} ({r.turnoTroca})
-                </p>
-              )}
-              {r.tipo === 'folga' && (
-                <p className="sol-detail">Data: {r.dataFolga}{r.motivo ? ` · ${r.motivo}` : ''}</p>
-              )}
-              {r.tipo === 'ferias' && (
-                <p className="sol-detail">{r.dataInicio} até {r.dataFim}</p>
-              )}
-            </div>
-          ))}
+          {requests.map(r => <NurseRequestCard key={r.id} r={r} />)}
         </div>
       )}
 
@@ -98,6 +128,94 @@ export default function Solicitacoes() {
           setTipo={setTipo}
           onClose={() => setShowModal(false)}
         />
+      )}
+    </div>
+  );
+}
+
+/* ── Card retrátil da enfermeira ── */
+function NurseRequestCard({ r }) {
+  const [expanded, setExpanded] = useState(false);
+  const preview     = buildPreview(r);
+  const statusBadge = STATUS_BADGE[r.status] ?? 'badge-pending';
+
+  let dateBlock = null;
+  if (r.tipo === 'swap') {
+    dateBlock = (
+      <div className="sol-dates">
+        <div className="sol-date-pair">
+          <span className="sol-date-label">Minha data</span>
+          <span className="sol-date-value">{fmtDateFull(r.dataOrigem)}</span>
+          {r.turnoOrigem && <span className="sol-shift-tag">{r.turnoOrigem}</span>}
+        </div>
+        <span className="sol-date-arrow" aria-hidden>↔</span>
+        <div className="sol-date-pair">
+          <span className="sol-date-label">{r.nomeTroca ?? 'colega'}</span>
+          <span className="sol-date-value">{fmtDateFull(r.dataTroca)}</span>
+          {r.turnoTroca && <span className="sol-shift-tag">{r.turnoTroca}</span>}
+        </div>
+      </div>
+    );
+  } else if (r.tipo === 'folga') {
+    dateBlock = (
+      <div className="sol-dates">
+        <div className="sol-date-pair">
+          <span className="sol-date-label">Folga em</span>
+          <span className="sol-date-value">{fmtDateFull(r.dataFolga)}</span>
+        </div>
+        {r.motivo && (
+          <p className="sol-motivo"><span className="sol-motivo-label">Motivo</span> {r.motivo}</p>
+        )}
+      </div>
+    );
+  } else if (r.tipo === 'ferias') {
+    dateBlock = (
+      <div className="sol-dates">
+        <div className="sol-date-pair">
+          <span className="sol-date-label">Início</span>
+          <span className="sol-date-value">{fmtDateFull(r.dataInicio)}</span>
+        </div>
+        <span className="sol-date-arrow" aria-hidden>→</span>
+        <div className="sol-date-pair">
+          <span className="sol-date-label">Fim</span>
+          <span className="sol-date-value">{fmtDateFull(r.dataFim)}</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`nr-card nr-card--${r.tipo ?? 'swap'}${expanded ? ' nr-card--open' : ''}`}>
+      <button className="nr-header" onClick={() => setExpanded(p => !p)} aria-expanded={expanded}>
+        <div className="nr-header-main">
+          <div className="nr-header-left">
+            <span className="nr-type-icon" aria-hidden>{TIPO_ICON[r.tipo] ?? '📋'}</span>
+            <span className="nr-type-label">{TIPO_LABELS[r.tipo] ?? r.tipo}</span>
+          </div>
+          <div className="nr-header-right">
+            <span className={`badge ${statusBadge}`}>{r.status}</span>
+            <svg
+              className={`nr-chevron${expanded ? ' nr-chevron--up' : ''}`}
+              width="14" height="14" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" strokeWidth="2.5"
+              strokeLinecap="round" strokeLinejoin="round"
+              aria-hidden
+            >
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </div>
+        </div>
+        {preview && <div className="nr-preview">{preview}</div>}
+      </button>
+
+      {expanded && (
+        <div className="nr-body">
+          {dateBlock}
+          <div className="nr-meta">
+            <span>Aberta {timeAgo(r.createdAt ?? r.criadaEm)}</span>
+            {r.observacao && <span className="nr-obs">💬 {r.observacao}</span>}
+          </div>
+        </div>
       )}
     </div>
   );
