@@ -8,6 +8,31 @@ import '../Solicitacoes.css';
 import './CoordSolicitacoes.css';
 
 const TYPE_LABEL = { swap: 'Troca de turno', folga: 'Folga', ferias: 'Férias' };
+const TYPE_ICON  = { swap: '🔄', folga: '🏖️', ferias: '✈️' };
+
+function getInitials(name) {
+  if (!name) return '?';
+  const p = name.trim().split(/\s+/);
+  return p.length === 1 ? p[0].slice(0,2).toUpperCase()
+                        : (p[0][0] + p[p.length-1][0]).toUpperCase();
+}
+function fmtDateFull(str) {
+  if (!str) return '—';
+  let y, m, d;
+  if (str.includes('-')) { [y, m, d] = str.split('-').map(Number); }
+  else if (str.includes('/')) { [d, m, y] = str.split('/').map(Number); }
+  else return str;
+  if (!y) return str;
+  return new Date(y, m-1, d)
+    .toLocaleDateString('pt-BR', { weekday:'short', day:'2-digit', month:'short' })
+    .replace('.','');
+}
+function fmtTs(ts) {
+  const d = ts?.toDate?.();
+  if (!d) return null;
+  return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' })
+    + ' • ' + d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+}
 
 function normalizeRequest(id, d) {
   const statusMap = { pending: 'pendente', approved: 'aprovada', rejected: 'rejeitada' };
@@ -225,7 +250,8 @@ export default function CoordSolicitacoes() {
 }
 
 function RequestCard({ request: r, onUpdate }) {
-  const [busy, setBusy] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [busy,     setBusy]     = useState(false);
 
   async function handle(status) {
     setBusy(true);
@@ -233,43 +259,110 @@ function RequestCard({ request: r, onUpdate }) {
     setBusy(false);
   }
 
-  const dateStr = (r.createdAt ?? r.criadaEm)?.toDate?.()?.toLocaleDateString('pt-BR') ?? '—';
+  const statusBadge = r.status === 'aprovada' ? 'badge-approved'
+                    : r.status === 'rejeitada' ? 'badge-rejected'
+                    : 'badge-pending';
+  const created = r.createdAt ?? r.criadaEm;
+  const decided = r.status === 'aprovada' ? r.approvedAt : r.status === 'rejeitada' ? r.rejectedAt : null;
 
   return (
-    <div className="sol-card card slide-up">
-      <div className="sol-card-top">
-        <div>
-          <p className="sol-tipo">{r.nomeFuncionaria ?? r.nurseId}</p>
-          <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
-            {TYPE_LABEL[r.tipo] ?? r.tipo} · {dateStr}
-          </p>
+    <div className={`csr-card csr-card--${r.tipo ?? 'swap'} csr-card--${r.status}${expanded ? ' csr-card--open' : ''}`}>
+
+      {/* ── Header clicável ── */}
+      <button className="csr-header" onClick={() => setExpanded(p => !p)} aria-expanded={expanded}>
+        <div className="csr-header-left">
+          <span className="csr-type-icon" aria-hidden>{TYPE_ICON[r.tipo] ?? '📋'}</span>
+          <span className="csr-type-label">{TYPE_LABEL[r.tipo] ?? r.tipo}</span>
         </div>
-        <span className={`badge ${r.status === 'aprovada' ? 'badge-approved' : r.status === 'rejeitada' ? 'badge-rejected' : 'badge-pending'}`}>
-          {r.status}
-        </span>
-      </div>
+        <div className="csr-header-right">
+          <span className={`badge ${statusBadge}`}>{r.status}</span>
+          <svg
+            className={`csr-chevron${expanded ? ' csr-chevron--up' : ''}`}
+            width="14" height="14" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" strokeWidth="2.5"
+            strokeLinecap="round" strokeLinejoin="round" aria-hidden
+          >
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </div>
+      </button>
 
-      {r.tipo === 'swap' && (
-        <p className="sol-detail">
-          {r.dataOrigem} ({r.turnoOrigem}) → {r.nomeTroca} em {r.dataTroca} ({r.turnoTroca})
-        </p>
-      )}
-      {r.tipo === 'folga' && (
-        <p className="sol-detail">Data: {r.dataFolga}{r.motivo ? ` · ${r.motivo}` : ''}</p>
-      )}
-      {r.tipo === 'ferias' && (
-        <p className="sol-detail">{r.dataInicio} até {r.dataFim}</p>
-      )}
-      {r.observacao && <p className="sol-detail" style={{ opacity: 0.7 }}>{r.observacao}</p>}
+      {/* ── Body expandido ── */}
+      {expanded && (
+        <div className="csr-body">
 
-      {r.status === 'pendente' && (
-        <div className="sol-actions">
-          <button className="btn btn-success btn-sm" onClick={() => handle('aprovada')} disabled={busy}>
-            {busy ? <span className="spinner" /> : '✓'} Aprovar
-          </button>
-          <button className="btn btn-danger btn-sm" onClick={() => handle('rejeitada')} disabled={busy}>
-            ✕ Rejeitar
-          </button>
+          {/* Pessoa */}
+          <div className="csr-person">
+            <div className="csr-avatar">{getInitials(r.nomeFuncionaria ?? r.nurseId)}</div>
+            <span className="csr-name">{r.nomeFuncionaria ?? r.nurseId}</span>
+          </div>
+
+          {/* Swap — grid 3 colunas */}
+          {r.tipo === 'swap' && (
+            <div className="csr-swap">
+              <div className="csr-swap-side">
+                <span className="csr-swap-who">{r.nomeFuncionaria?.split(' ')[0] ?? 'Solicitante'}</span>
+                <span className="csr-swap-date">📅 {fmtDateFull(r.dataOrigem)}</span>
+                {r.turnoOrigem && <span className="csr-swap-shift">{r.turnoOrigem}</span>}
+              </div>
+              <span className="csr-swap-arrow">⇄</span>
+              <div className="csr-swap-side">
+                <span className="csr-swap-who">{r.nomeTroca?.split(' ')[0] ?? 'Colega'}</span>
+                <span className="csr-swap-date">📅 {fmtDateFull(r.dataTroca)}</span>
+                {r.turnoTroca && <span className="csr-swap-shift">{r.turnoTroca}</span>}
+              </div>
+            </div>
+          )}
+
+          {/* Folga */}
+          {r.tipo === 'folga' && (
+            <div className="csr-dates">
+              <div className="csr-date-chip">📅 {fmtDateFull(r.dataFolga)}</div>
+              {r.motivo && <div className="csr-motivo">💬 {r.motivo}</div>}
+            </div>
+          )}
+
+          {/* Férias */}
+          {r.tipo === 'ferias' && (
+            <div className="csr-dates">
+              <div className="csr-date-chip">📅 {fmtDateFull(r.dataInicio)}</div>
+              <span className="csr-date-arrow">→</span>
+              <div className="csr-date-chip">📅 {fmtDateFull(r.dataFim)}</div>
+            </div>
+          )}
+
+          {/* Meta */}
+          <div className="csr-meta">
+            {fmtTs(created) && <span>🕒 {fmtTs(created)}</span>}
+            {r.observacao   && <span>💬 {r.observacao}</span>}
+            {decided        && (
+              <span className={r.status === 'aprovada' ? 'csr-meta--ok' : 'csr-meta--no'}>
+                {r.status === 'aprovada' ? '✓ Aprovada' : '✕ Rejeitada'}{fmtTs(decided) ? ` · ${fmtTs(decided)}` : ''}
+              </span>
+            )}
+          </div>
+
+          {/* Ações — só pendentes */}
+          {r.status === 'pendente' && (
+            <div className="csr-actions">
+              <button className="csr-btn csr-btn--reject" onClick={() => handle('rejeitada')} disabled={busy}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden>
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+                Rejeitar
+              </button>
+              <button className="csr-btn csr-btn--approve" onClick={() => handle('aprovada')} disabled={busy}>
+                {busy ? <span className="spinner" /> : (
+                  <>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    Aprovar
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

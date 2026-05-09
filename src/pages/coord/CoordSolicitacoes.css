@@ -1,44 +1,226 @@
 /* ════════════════════════════════════════════════════════════════════
-   CoordSolicitacoes — overrides e estilos exclusivos da visao
-   coordenadora. A base de .sol-card / .sol-detail vem de Solicitacoes.css
+   CoordSolicitacoes — cards retráteis de aprovação
    ════════════════════════════════════════════════════════════════════ */
 
-/* Botoes de acao ocupam toda a largura igualmente */
-.sol-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 14px;
+/* ── Card container ── */
+.csr-card {
+  background: var(--bg-surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  position: relative;
+  transition: box-shadow var(--transition);
 }
-.sol-actions .btn { flex: 1; }
+.csr-card--open { box-shadow: var(--shadow-raised); }
 
-/* Badge de nome da funcionaria — destaque na visao coord */
-.sol-tipo {
-  font-size: 15px;
+/* Faixa lateral por tipo */
+.csr-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+}
+.csr-card--swap::before   { background: var(--accent); }
+.csr-card--folga::before  { background: #38bdf8; }
+.csr-card--ferias::before { background: #34d399; }
+
+/* Tinte sutil no header por status */
+.csr-card--aprovada  { border-color: rgba(52, 211, 153, 0.25); }
+.csr-card--rejeitada { border-color: rgba(239, 68, 68, 0.20); }
+
+/* ── Header clicável ── */
+.csr-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 14px 13px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--transition);
+  gap: 8px;
+}
+.csr-header:active { background: var(--bg-elevated); }
+
+.csr-header-left  { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
+.csr-header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+.csr-type-icon  { font-size: 15px; line-height: 1; flex-shrink: 0; }
+.csr-type-label { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+
+.csr-chevron { color: var(--text-muted); transition: transform 0.2s ease; flex-shrink: 0; }
+.csr-chevron--up { transform: rotate(180deg); }
+
+/* ── Body expandido ── */
+.csr-body {
+  padding: 12px 14px 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid var(--divider);
+}
+
+/* ── Linha de pessoa ── */
+.csr-person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.csr-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent-grad);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 3px 10px var(--accent-glow);
+}
+.csr-name {
+  font-size: 14px;
   font-weight: 700;
   color: var(--text-primary);
 }
 
-/* Detalhe da troca com fundo recuado (neumorfismo inset) */
-.sol-detail {
-  background: var(--bg-recessed);
-  border-radius: var(--radius-sm);
-  padding: 8px 12px;
-  margin-top: 8px;
-  font-size: 13px;
+/* ── Swap — grade 3 colunas ── */
+.csr-swap {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-elevated);
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+}
+.csr-swap-side {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.csr-swap-side:last-child { align-items: flex-end; text-align: right; }
+
+.csr-swap-who {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.csr-swap-date {
+  font-size: 11px;
   color: var(--text-secondary);
-  line-height: 1.5;
-  box-shadow: var(--neu-inset);
-  border: none;
+  font-variant-numeric: tabular-nums;
+}
+.csr-swap-shift {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  padding: 2px 6px;
+  border-radius: var(--r-sm);
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--accent-soft);
+  color: var(--accent-bright);
+  letter-spacing: 0.02em;
+}
+.csr-swap-arrow {
+  font-size: 18px;
+  color: var(--accent);
+  font-weight: 700;
+  text-align: center;
 }
 
-/* Toast de feedback no rodape */
+/* ── Datas (folga / férias) ── */
+.csr-dates {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: var(--bg-elevated);
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+}
+.csr-date-chip {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border-radius: var(--r-sm);
+  padding: 4px 8px;
+  box-shadow: var(--shadow-soft);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.csr-date-arrow {
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.csr-motivo {
+  font-size: 12px;
+  color: var(--text-secondary);
+  width: 100%;
+}
+
+/* ── Meta ── */
+.csr-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.csr-meta--ok { color: var(--success); font-weight: 600; }
+.csr-meta--no { color: var(--danger);  font-weight: 600; }
+
+/* ── Botões de ação ── */
+.csr-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 2px;
+}
+.csr-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 10px 8px;
+  border-radius: var(--r-md);
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  transition: opacity var(--transition), transform var(--transition);
+}
+.csr-btn:active { transform: scale(0.97); }
+.csr-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.csr-btn--reject {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+.csr-btn--approve {
+  background: var(--accent-grad);
+  color: #fff;
+  box-shadow: 0 4px 14px var(--accent-glow);
+}
+
+/* ── Toast de feedback no rodapé ── */
 .toast-bar {
   position: fixed;
   bottom: calc(var(--bottom-nav-h, 64px) + 12px);
   left: 50%;
   transform: translateX(-50%);
   padding: 10px 20px;
-  border-radius: var(--radius-full);
+  border-radius: var(--r-full);
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
