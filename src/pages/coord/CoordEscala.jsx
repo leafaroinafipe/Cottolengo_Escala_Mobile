@@ -9,7 +9,7 @@ function daysInMonth(y, m) { return new Date(y, m + 1, 0).getDate(); }
 
 const MONTH_NAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
                      'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const DOW_NAMES   = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const DOW_NAMES   = ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
 const DOW_FULL    = ['domingo','segunda','terça','quarta','quinta','sexta','sábado'];
 
 function getInitials(name) {
@@ -24,7 +24,7 @@ export default function CoordEscala() {
   const [year,       setYear]       = useState(now.getFullYear());
   const [month,      setMonth]      = useState(now.getMonth());
   const [nurses,     setNurses]     = useState(NURSES_DEFAULT);
-  const [selectedId, setSelectedId] = useState('all');
+  const [selectedId, setSelectedId] = useState(() => sessionStorage.getItem('coord-escala-filter') ?? 'all');
   const [sched,      setSched]      = useState({});        // single nurse
   const [allScheds,  setAllScheds]  = useState({});        // all nurses { nurseId: { d: code } }
   const [loading,    setLoading]    = useState(false);
@@ -32,7 +32,7 @@ export default function CoordEscala() {
 
   const days     = daysInMonth(year, month);
   const monthNum = month + 1;
-  const firstDow = new Date(year, month, 1).getDay();
+  const firstDow = (new Date(year, month, 1).getDay() + 6) % 7; // 0=Seg … 6=Dom
   const todayDay = now.getMonth() === month && now.getFullYear() === year ? now.getDate() : -1;
 
   /* Carrega lista de funcionárias em tempo real */
@@ -150,7 +150,7 @@ export default function CoordEscala() {
         <select
           className="nurse-select"
           value={selectedId}
-          onChange={e => { setSelectedId(e.target.value); setSelectedDay(null); }}
+          onChange={e => { const id = e.target.value; sessionStorage.setItem('coord-escala-filter', id); setSelectedId(id); setSelectedDay(null); }}
         >
           <option value="all">Todas as funcionárias</option>
           {nurses.map(n => <option key={n.id} value={n.id}>{n.name}</option>)}
@@ -187,15 +187,15 @@ export default function CoordEscala() {
         <div className="cal-card">
           <div className="cal-dow-row">
             {DOW_NAMES.map((d, i) => (
-              <span key={d} className={`cal-dow${i===0?' cal-dow--sun':i===6?' cal-dow--sat':''}`}>{d}</span>
+              <span key={d} className={`cal-dow${i===5?' cal-dow--sat':i===6?' cal-dow--sun':''}`}>{d}</span>
             ))}
           </div>
           <div className="cal-grid">
             {cells.map((day, idx) => {
               if (!day) return <div key={`e-${idx}`} className="cal-cell cal-cell--empty" />;
-              const dow    = (firstDow + day - 1) % 7;
-              const isSun  = dow === 0;
-              const isSat  = dow === 6;
+              const dow    = (firstDow + day - 1) % 7; // 0=Seg … 5=Sáb … 6=Dom
+              const isSun  = dow === 6;
+              const isSat  = dow === 5;
               const isToday = day === todayDay;
               const isSelected = selectedDay === day && selectedId === 'all';
 
@@ -275,7 +275,7 @@ export default function CoordEscala() {
         <div className="day-detail-panel slide-up">
           <div className="day-detail-header">
             <div>
-              <p className="day-detail-dow">{DOW_FULL[(firstDow + selectedDay - 1) % 7]}</p>
+              <p className="day-detail-dow">{DOW_FULL[new Date(year, month, selectedDay).getDay()]}</p>
               <p className="day-detail-date">
                 {String(selectedDay).padStart(2,'0')}/{String(monthNum).padStart(2,'0')}/{year}
               </p>

@@ -204,13 +204,13 @@
 .csr-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .csr-btn--reject {
-  background: var(--danger-bg);
-  color: var(--danger);
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
 }
 .csr-btn--approve {
-  background: var(--accent-grad);
+  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
   color: #fff;
-  box-shadow: 0 4px 14px var(--accent-glow);
+  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.35);
 }
 
 /* ── Toast de feedback no rodapé ── */
@@ -272,40 +272,6 @@
   gap: 20px;
 }
 
-/* ── Grupo por data ── */
-.rsm-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.rsm-group-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 0 2px 4px;
-  border-bottom: 1px solid var(--divider);
-}
-.rsm-group-label {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  flex: 1;
-}
-.rsm-group-count {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--text-muted);
-  background: var(--bg-elevated);
-  border-radius: var(--r-full);
-  padding: 2px 8px;
-}
-.rsm-conflict-badge {
-  font-size: 13px;
-  color: #f59e0b;
-}
-.rsm-group--conflict .rsm-group-label { color: #f59e0b; }
 
 /* ── Card compacto ── */
 .rsm-card {
@@ -411,9 +377,12 @@
 .rsm-btn:active   { transform: scale(0.93); }
 .rsm-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.rsm-btn--reject  { background: var(--danger-bg); color: var(--danger); }
+.rsm-btn--reject  {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
 .rsm-btn--approve {
-  background: var(--accent-grad);
+  background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
   color: #fff;
-  box-shadow: 0 3px 10px var(--accent-glow);
+  box-shadow: 0 3px 10px rgba(34, 197, 94, 0.35);
 }

@@ -36,15 +36,18 @@ function fmtTs(ts) {
 
 function normalizeRequest(id, d) {
   const statusMap = { pending: 'pendente', approved: 'aprovada', rejected: 'rejeitada' };
+  const tipoLegMap = { FE: 'ferias', AT: 'ferias', OFF: 'folga', troca: 'swap' };
+  const tipoRaw = d.tipo ?? d.type;
   return {
     id, ...d,
-    tipo:            d.tipo            ?? d.type,
+    tipo:            tipoLegMap[tipoRaw] ?? tipoRaw,
     status:          statusMap[d.status] ?? d.status,
     nomeFuncionaria: d.nomeFuncionaria  ?? d.nurseName,
     nurseIdTroca:    d.nurseIdTroca    ?? d.nurseIdcambio,
     nomeTroca:       d.nomeTroca       ?? d.nursecambio,
     turnoOrigem:     d.turnoOrigem     ?? d.turnoRichiedente,
     turnoTroca:      d.turnoTroca      ?? d.turnoCambio,
+    dataFolga:       d.dataFolga?.toDate?.()?.toLocaleDateString('pt-BR') ?? d.dataFolga,
     dataOrigem:      d.dataOrigem      ?? d.dataRichiedente?.toDate?.()?.toLocaleDateString('pt-BR'),
     dataTroca:       d.dataTroca       ?? d.dataCambio?.toDate?.()?.toLocaleDateString('pt-BR'),
     dataInicio:      d.dataInicio      ?? d.startDate?.toDate?.()?.toLocaleDateString('pt-BR'),
@@ -74,17 +77,22 @@ function toIso(str) {
   return `${p.year}-${String(p.month).padStart(2,'0')}-${String(p.day).padStart(2,'0')}`;
 }
 
+/* Mapa para tipos legados do app antigo (códigos de turno usados como tipo) */
+const TIPO_LEGADO = { FE: 'ferias', AT: 'ferias', OFF: 'folga' };
+
 function primaryIso(r) {
-  if (r.tipo === 'folga')  return toIso(r.dataFolga);
-  if (r.tipo === 'ferias') return toIso(r.dataInicio);
-  if (r.tipo === 'swap') {
+  const tipo = TIPO_LEGADO[r.tipo] ?? r.tipo;
+  if (tipo === 'folga')  return toIso(r.dataFolga);
+  if (tipo === 'ferias') return toIso(r.dataInicio);
+  if (tipo === 'swap') {
     const a = toIso(r.dataOrigem), b = toIso(r.dataTroca);
     if (!a && !b) return '';
     if (!a) return b;
     if (!b) return a;
     return a <= b ? a : b;
   }
-  return '';
+  /* tipo desconhecido — varre todos os campos de data */
+  return toIso(r.dataFolga) || toIso(r.dataInicio) || toIso(r.dataOrigem) || toIso(r.dataTroca) || '';
 }
 
 function fmtGroupHeader(iso) {
@@ -287,34 +295,18 @@ export default function CoordSolicitacoes() {
 }
 
 function ResumoView({ requests, onUpdate }) {
-  const groups = useMemo(() => {
-    const map = {};
-    for (const r of requests) {
-      const iso = primaryIso(r) || '__sem_data__';
-      if (!map[iso]) map[iso] = [];
-      map[iso].push(r);
-    }
-    return Object.entries(map)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([iso, items]) => ({ iso, items }));
+  const sorted = useMemo(() => {
+    return [...requests].sort((a, b) => {
+      const isoA = primaryIso(a) || '9999-99-99';
+      const isoB = primaryIso(b) || '9999-99-99';
+      if (isoA !== isoB) return isoA.localeCompare(isoB);
+      return (a.createdAt?.toMillis?.() ?? 0) - (b.createdAt?.toMillis?.() ?? 0);
+    });
   }, [requests]);
 
   return (
     <div className="rsm-container">
-      {groups.map(({ iso, items }) => (
-        <div key={iso} className={`rsm-group${items.length > 1 ? ' rsm-group--conflict' : ''}`}>
-          <div className="rsm-group-header">
-            <span className="rsm-group-label">
-              {iso === '__sem_data__' ? 'Sem data' : fmtGroupHeader(iso)}
-            </span>
-            <span className="rsm-group-count">{items.length}</span>
-            {items.length > 1 && <span className="rsm-conflict-badge">⚠</span>}
-          </div>
-          {items.map(r => (
-            <ResumoCard key={r.id} request={r} onUpdate={onUpdate} />
-          ))}
-        </div>
-      ))}
+      {sorted.map(r => <ResumoCard key={r.id} request={r} onUpdate={onUpdate} />)}
     </div>
   );
 }
@@ -328,21 +320,22 @@ function ResumoCard({ request: r, onUpdate }) {
     setBusy(false);
   }
 
-  const detailLine = r.tipo === 'swap'
+  const tipo = r.tipo ?? 'swap';
+  const dateDetail = tipo === 'swap'
     ? `${fmtDateFull(r.dataOrigem)} ⇄ ${fmtDateFull(r.dataTroca)}`
-    : r.tipo === 'folga'  ? fmtDateFull(r.dataFolga)
-    : r.tipo === 'ferias' ? `${fmtDateFull(r.dataInicio)} → ${fmtDateFull(r.dataFim)}`
-    : '';
+    : tipo === 'folga'  ? fmtDateFull(r.dataFolga)
+    : tipo === 'ferias' ? `${fmtDateFull(r.dataInicio)} → ${fmtDateFull(r.dataFim)}`
+    : (() => { const iso = primaryIso(r); return iso ? fmtGroupHeader(iso) : ''; })();
 
   return (
-    <div className={`rsm-card rsm-card--${r.tipo ?? 'swap'}`}>
+    <div className={`rsm-card rsm-card--${tipo}`}>
       <div className="rsm-left">
         <div className="rsm-avatar">{getInitials(r.nomeFuncionaria ?? r.nurseId)}</div>
         <div className="rsm-info">
           <span className="rsm-name">{r.nomeFuncionaria ?? r.nurseId}</span>
           <div className="rsm-detail-row">
-            <span className="rsm-type-chip">{TYPE_ICON[r.tipo]} {TYPE_LABEL[r.tipo] ?? r.tipo}</span>
-            {detailLine && <span className="rsm-detail">{detailLine}</span>}
+            <span className="rsm-type-chip">{TYPE_ICON[tipo] ?? '📋'} {TYPE_LABEL[tipo] ?? tipo}</span>
+            {dateDetail && <span className="rsm-detail">{dateDetail}</span>}
           </div>
         </div>
       </div>
