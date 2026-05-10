@@ -48,10 +48,18 @@ const IconUsers = () => (
   </svg>
 );
 
+const IconProfile = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+    <circle cx="12" cy="7" r="4"/>
+  </svg>
+);
+
 const NURSE_NAV = [
   { to: '/escala',       label: 'Escala',    icon: <IconCalendar /> },
   { to: '/solicitacoes', label: 'Pedidos',   icon: <IconRequests /> },
   { to: '/dashboard',    label: 'Dashboard', icon: <IconChart /> },
+  { to: '/perfil',       label: 'Perfil',    icon: <IconProfile /> },
 ];
 
 const COORD_NAV = [
@@ -59,6 +67,7 @@ const COORD_NAV = [
   { to: '/escala',       label: 'Escala',  icon: <IconCalendar /> },
   { to: '/solicitacoes', label: 'Pedidos', icon: <IconRequests /> },
   { to: '/equipe',       label: 'Equipe',  icon: <IconUsers /> },
+  { to: '/perfil',       label: 'Perfil',  icon: <IconProfile /> },
 ];
 
 export default function BottomNav() {

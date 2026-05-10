@@ -21,7 +21,7 @@ function normalizeRequest(id, d) {
   const statusMap = { pending: 'pendente', approved: 'aprovada', rejected: 'rejeitada' };
   const tipoLegMap = { FE: 'ferias', AT: 'ferias', OFF: 'folga', troca: 'swap' };
   const tipoRaw = d.tipo ?? d.type;
-  return {
+  const r = {
     id, ...d,
     tipo:            tipoLegMap[tipoRaw] ?? tipoRaw,
     status:          statusMap[d.status] ?? d.status,
@@ -36,6 +36,11 @@ function normalizeRequest(id, d) {
     dataInicio: toDateStr(d.dataInicio) ?? toDateStr(d.startDate),
     dataFim:    toDateStr(d.dataFim)    ?? toDateStr(d.endDate),
   };
+  /* Fallback: folga legada com startDate mas sem dataFolga */
+  if (r.tipo === 'folga' && !r.dataFolga && r.dataInicio) {
+    r.dataFolga = r.dataInicio;
+  }
+  return r;
 }
 
 const TIPO_LABELS = { swap: 'Troca de turno', folga: 'Folga', ferias: 'Férias' };

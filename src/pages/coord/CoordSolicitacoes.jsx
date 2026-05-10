@@ -47,7 +47,7 @@ function normalizeRequest(id, d) {
   const statusMap = { pending: 'pendente', approved: 'aprovada', rejected: 'rejeitada' };
   const tipoLegMap = { FE: 'ferias', AT: 'ferias', OFF: 'folga', troca: 'swap' };
   const tipoRaw = d.tipo ?? d.type;
-  return {
+  const r = {
     id, ...d,
     tipo:            tipoLegMap[tipoRaw] ?? tipoRaw,
     status:          statusMap[d.status] ?? d.status,
@@ -63,6 +63,11 @@ function normalizeRequest(id, d) {
     dataInicio: toDateStr(d.dataInicio) ?? toDateStr(d.startDate),
     dataFim:    toDateStr(d.dataFim)    ?? toDateStr(d.endDate),
   };
+  /* Fallback: folga legada com startDate mas sem dataFolga */
+  if (r.tipo === 'folga' && !r.dataFolga && r.dataInicio) {
+    r.dataFolga = r.dataInicio;
+  }
+  return r;
 }
 
 /* ── Converte "YYYY-MM-DD" ou "DD/MM/YYYY" para { year, month, day } ── */
@@ -409,7 +414,7 @@ function ResumoView({ requests }) {
 }
 
 function TypeGroup({ tipo, label, icon, items }) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const pendentes  = items.filter(r => r.status === 'pendente').length;
   const aprovadas  = items.filter(r => r.status === 'aprovada').length;
   const rejeitadas = items.filter(r => r.status === 'rejeitada').length;
