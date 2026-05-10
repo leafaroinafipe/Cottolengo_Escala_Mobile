@@ -42,3 +42,68 @@
 .perfil-value { color: var(--text-primary); font-weight: 600; }
 
 .logout-btn { margin-top: 8px; }
+
+/* Botão de instalação do app */
+.perfil-install-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 14px 16px;
+  border-radius: var(--r-lg);
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 16px var(--accent-glow);
+  transition: opacity var(--transition), transform var(--transition);
+}
+.perfil-install-btn:active { transform: scale(0.97); }
+
+.perfil-installed-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: rgba(34, 197, 94, 0.12);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  border-radius: var(--r-lg);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Botão de ativar notificações */
+.perfil-notif-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 14px 16px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.perfil-notif-btn:hover { background: var(--bg-card); }
+
+.perfil-notif-denied {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--text-muted);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--r-lg);
+  font-size: 12px;
+  font-weight: 600;
+}

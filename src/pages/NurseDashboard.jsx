@@ -296,29 +296,45 @@ export default function NurseDashboard() {
               </div>
             </div>
 
-            {/* Noites por mês */}
+            {/* Turnos por mês (manhãs, tardes, noites) */}
             <div className="ndb-card">
-              <p className="ndb-section-label">Noites por mês</p>
-              {annualData.map(({ month: m, noites }) => {
-                const maxN = Math.max(...annualData.map(d => d.noites), 1);
-                const pct  = Math.round((noites / maxN) * 100);
+              <p className="ndb-section-label">Turnos por mês</p>
+              <div className="ndb-legend-row" style={{ display:'flex', gap:12, marginBottom:10, flexWrap:'wrap' }}>
+                <span style={{ display:'flex', alignItems:'center', gap:4, fontSize:11, color:'var(--text-secondary)' }}>
+                  <span style={{ width:10, height:10, borderRadius:3, background:'#fbbf24' }} /> Manhãs
+                </span>
+                <span style={{ display:'flex', alignItems:'center', gap:4, fontSize:11, color:'var(--text-secondary)' }}>
+                  <span style={{ width:10, height:10, borderRadius:3, background:'#f97316' }} /> Tardes
+                </span>
+                <span style={{ display:'flex', alignItems:'center', gap:4, fontSize:11, color:'var(--text-secondary)' }}>
+                  <span style={{ width:10, height:10, borderRadius:3, background:'#7c3aed' }} /> Noites
+                </span>
+              </div>
+              {annualData.map(({ month: m, manhas, tardes, noites }) => {
+                const total = manhas + tardes + noites;
+                const maxBar = Math.max(...annualData.map(d => d.manhas + d.tardes + d.noites), 1);
+                const pctTotal = Math.round((total / maxBar) * 100);
+                const pctM = total > 0 ? Math.round((manhas / total) * pctTotal) : 0;
+                const pctT = total > 0 ? Math.round((tardes / total) * pctTotal) : 0;
+                const pctN = total > 0 ? Math.round((noites / total) * pctTotal) : 0;
                 const isCur = m === now.getMonth() && year === now.getFullYear();
                 return (
                   <div key={m} className="ndb-month-row">
                     <span className={`ndb-month-name${isCur ? ' ndb-month-name--cur' : ''}`}>{MONTH_NAMES[m]}</span>
-                    <div className="ndb-bar-track">
-                      <div
-                        className="ndb-bar-fill"
-                        style={{
-                          width: `${pct}%`,
-                          background: isCur ? '#7c3aed' : 'rgba(124,58,237,0.25)',
-                        }}
-                      />
+                    <div className="ndb-bar-track" style={{ display:'flex', overflow:'hidden' }}>
+                      {pctM > 0 && <div className="ndb-bar-fill" style={{ width:`${pctM}%`, background:'#fbbf24', borderRadius: pctT+pctN > 0 ? '4px 0 0 4px' : '4px' }} />}
+                      {pctT > 0 && <div className="ndb-bar-fill" style={{ width:`${pctT}%`, background:'#f97316', borderRadius: pctM+pctN === 0 ? '4px' : 0 }} />}
+                      {pctN > 0 && <div className="ndb-bar-fill" style={{ width:`${pctN}%`, background:'#7c3aed', borderRadius: pctM+pctT > 0 ? '0 4px 4px 0' : '4px' }} />}
                     </div>
-                    <span className="ndb-bar-hours">{noites}</span>
+                    <span className="ndb-bar-hours" style={{ minWidth:36, textAlign:'right' }}>{total}</span>
                   </div>
                 );
               })}
+              <div className="ndb-annual-avg" style={{ display:'flex', justifyContent:'space-between', flexWrap:'wrap' }}>
+                <span>🌅 {annualData.reduce((a, d) => a + d.manhas, 0)} manhãs</span>
+                <span>🌇 {annualData.reduce((a, d) => a + d.tardes, 0)} tardes</span>
+                <span>🌙 {annualData.reduce((a, d) => a + d.noites, 0)} noites</span>
+              </div>
             </div>
           </>
         )

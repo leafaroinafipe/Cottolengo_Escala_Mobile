@@ -49,7 +49,7 @@ export default function App() {
               }
             >
               <Route index element={<RoleRoute coord={<CoordHome />} nurse={<Navigate to="/escala" replace />} />} />
-              <Route path="escala" element={<RoleRoute coord={<CoordEscala />} nurse={<MinhaEscala />} />} />
+              <Route path="escala" element={<CoordEscala />} />
               <Route path="solicitacoes" element={<RoleRoute coord={<CoordSolicitacoes />} nurse={<Solicitacoes />} />} />
               <Route path="perfil"    element={<Perfil />} />
               <Route path="equipe"    element={<CoordAdmin />} />

@@ -39,3 +39,15 @@ try {
   firestore = getFirestore(app);
 }
 export const db = firestore;
+
+/* Firebase Cloud Messaging — lazy init (só em browsers que suportam) */
+import { getMessaging, isSupported } from 'firebase/messaging';
+
+let _messaging = null;
+export async function getMsg() {
+  if (_messaging) return _messaging;
+  const ok = await isSupported();
+  if (!ok) return null;
+  _messaging = getMessaging(app);
+  return _messaging;
+}

@@ -213,3 +213,9 @@
   overflow: hidden; text-overflow: ellipsis;
   white-space: nowrap; max-width: 240px;
 }
+
+/* Botão Editar no card da enfermeira */
+.csr-btn--edit {
+  background: var(--accent-soft);
+  color: var(--accent-bright);
+}
