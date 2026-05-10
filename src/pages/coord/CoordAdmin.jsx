@@ -4,6 +4,11 @@ import { sendPasswordResetEmail } from 'firebase/auth';
 import { db, auth } from '../../firebase';
 import './CoordAdmin.css';
 
+/* URL do app Local (painel admin) onde a conta Firebase Auth da funcionária
+ * é efetivamente criada. Configurável via .env (VITE_LOCAL_APP_URL). Quando
+ * indefinida, o atalho "Abrir app Local" fica oculto. */
+const LOCAL_APP_URL = import.meta.env.VITE_LOCAL_APP_URL ?? '';
+
 export default function CoordAdmin() {
   const [nurses,  setNurses]  = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,22 +49,57 @@ export default function CoordAdmin() {
         nightQuota:  Number(form.nightQuota),
         atualizadaEm: serverTimestamp(),
       });
-      setEditing(null);
+      /* Reflete localmente para que checagens pós-save (ex: reset) usem
+       * o valor salvo sem esperar o snapshot voltar do Firestore. */
+      setEditing(prev => prev ? { ...prev, ...form, initials: form.initials.toUpperCase() } : prev);
       showToast('Dados salvos com sucesso!', 'success');
-    } catch {
-      setError('Erro ao salvar. Tente novamente.');
+    } catch (err) {
+      console.error('[CoordAdmin] updateDoc falhou:', err);
+      setError(`Erro ao salvar: ${err?.code ?? err?.message ?? 'desconhecido'}`);
     } finally {
       setSaving(false);
     }
   }
 
   async function handlePasswordReset() {
-    if (!form.email) return showToast('Cadastre um e-mail primeiro.', 'danger');
+    const email = form.email?.trim();
+    if (!email) {
+      return showToast('Cadastre um e-mail primeiro.', 'danger');
+    }
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      return showToast('Formato de e-mail inválido.', 'danger');
+    }
+    /* Pré-condição arquitetural: a conta Firebase Auth da funcionária só
+     * é criada pelo app Local (Equipe.jsx#handleCreateLogin). Sem hasLogin
+     * marcado, o sendPasswordResetEmail "vai" mas o Firebase descarta em
+     * silêncio (ainda mais com Email Enumeration Protection ligada). */
+    if (!editing?.hasLogin) {
+      return showToast(
+        'Esta funcionária ainda não tem conta de login. Crie no app Local antes de enviar reset.',
+        'danger'
+      );
+    }
+    /* Evita enviar reset para um e-mail digitado mas não persistido. */
+    if (email !== editing.email) {
+      return showToast(
+        'Salve o novo e-mail antes de enviar o reset.',
+        'danger'
+      );
+    }
     try {
-      await sendPasswordResetEmail(auth, form.email);
-      showToast(`Reset enviado para ${form.email}`, 'success');
-    } catch {
-      showToast('Erro ao enviar reset de senha.', 'danger');
+      await sendPasswordResetEmail(auth, email);
+      showToast(`Reset enviado para ${email}. Verifique também o spam.`, 'success');
+    } catch (err) {
+      console.error('[CoordAdmin] sendPasswordResetEmail falhou:', err);
+      const msgs = {
+        'auth/user-not-found':         'E-mail não tem conta Auth. Crie o login no app Local.',
+        'auth/invalid-email':          'E-mail inválido.',
+        'auth/too-many-requests':      'Muitas tentativas. Aguarde alguns minutos.',
+        'auth/network-request-failed': 'Sem conexão. Tente novamente.',
+        'auth/missing-email':          'E-mail vazio.',
+        'auth/operation-not-allowed':  'Provedor Email/Password desabilitado no Firebase.',
+      };
+      showToast(msgs[err.code] ?? `Erro: ${err.code ?? err.message}`, 'danger');
     }
   }
 
@@ -123,14 +163,43 @@ export default function CoordAdmin() {
 
               {error && <div className="alert alert-error">{error}</div>}
 
+              {/* Aviso quando a funcionária ainda não tem conta Firebase Auth.
+                  Sem hasLogin=true o reset de senha falha em silêncio. A criação
+                  da conta acontece no app Local (Equipe.jsx#handleCreateLogin). */}
+              {!editing.hasLogin && (
+                <div className="alert alert-warn" role="status" style={{ fontSize: 13, lineHeight: 1.4 }}>
+                  <strong>Sem conta de login.</strong> Crie a conta no app Local
+                  antes de tentar enviar reset. {LOCAL_APP_URL && (
+                    <>O atalho abaixo abre o painel admin em uma nova aba.</>
+                  )}
+                </div>
+              )}
+
               <button type="submit" className="btn btn-primary btn-full" disabled={saving}>
                 {saving ? <><span className="spinner" /> Salvando...</> : 'Salvar alterações'}
               </button>
+
+              {/* Atalho para o app Local quando há lacuna de login. Se a env var
+                  não estiver definida, o botão é omitido (degradação silenciosa). */}
+              {!editing.hasLogin && LOCAL_APP_URL && (
+                <a
+                  href={LOCAL_APP_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-secondary btn-full"
+                  style={{ marginTop: 8 }}
+                >
+                  Abrir app Local para criar login
+                </a>
+              )}
+
               <button
                 type="button"
                 className="btn btn-ghost btn-full"
                 style={{ marginTop: 8 }}
                 onClick={handlePasswordReset}
+                disabled={!editing.hasLogin}
+                title={!editing.hasLogin ? 'Crie a conta no app Local primeiro' : undefined}
               >
                 Enviar reset de senha
               </button>

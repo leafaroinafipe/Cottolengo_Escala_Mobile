@@ -8,6 +8,36 @@ import { useAuth } from '../contexts/AuthContext';
 import { SHIFTS } from '../constants/shifts';
 import './Solicitacoes.css';
 
+/* Converte qualquer representação de data do Firestore para string */
+function toDateStr(val) {
+  if (!val) return null;
+  if (typeof val?.toDate === 'function') return val.toDate().toLocaleDateString('pt-BR');
+  if (typeof val === 'number') return new Date(val).toLocaleDateString('pt-BR');
+  if (typeof val === 'string' && val.trim()) return val.trim();
+  return null;
+}
+
+function normalizeRequest(id, d) {
+  const statusMap = { pending: 'pendente', approved: 'aprovada', rejected: 'rejeitada' };
+  const tipoLegMap = { FE: 'ferias', AT: 'ferias', OFF: 'folga', troca: 'swap' };
+  const tipoRaw = d.tipo ?? d.type;
+  return {
+    id, ...d,
+    tipo:            tipoLegMap[tipoRaw] ?? tipoRaw,
+    status:          statusMap[d.status] ?? d.status,
+    nomeFuncionaria: d.nomeFuncionaria  ?? d.nurseName,
+    nurseIdTroca:    d.nurseIdTroca    ?? d.nurseIdcambio,
+    nomeTroca:       d.nomeTroca       ?? d.nursecambio,
+    turnoOrigem:     d.turnoOrigem     ?? d.turnoRichiedente,
+    turnoTroca:      d.turnoTroca      ?? d.turnoCambio,
+    dataFolga:  toDateStr(d.dataFolga) ?? toDateStr(d.data) ?? toDateStr(d.date) ?? toDateStr(d.dataRiposo),
+    dataOrigem: toDateStr(d.dataOrigem) ?? toDateStr(d.dataRichiedente),
+    dataTroca:  toDateStr(d.dataTroca) ?? toDateStr(d.dataCambio),
+    dataInicio: toDateStr(d.dataInicio) ?? toDateStr(d.startDate),
+    dataFim:    toDateStr(d.dataFim)    ?? toDateStr(d.endDate),
+  };
+}
+
 const TIPO_LABELS = { swap: 'Troca de turno', folga: 'Folga', ferias: 'Férias' };
 const TIPO_ICON   = { swap: '🔄', folga: '🏖️', ferias: '✈️' };
 const STATUS_BADGE = { pendente: 'badge-pending', aprovada: 'badge-approved', rejeitada: 'badge-rejected' };
@@ -83,7 +113,7 @@ export default function Solicitacoes() {
       orderBy('createdAt', 'desc'),
     );
     const unsub = onSnapshot(q, snap => {
-      setRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setRequests(snap.docs.map(d => normalizeRequest(d.id, d.data())));
       setLoading(false);
     });
     return unsub;

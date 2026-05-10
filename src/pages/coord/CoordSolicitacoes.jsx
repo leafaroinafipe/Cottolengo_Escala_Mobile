@@ -347,7 +347,7 @@ export default function CoordSolicitacoes() {
           <span className="spinner spinner-lg" />
         </div>
       ) : view === 'resumo' ? (
-        <ResumoView requests={requests} />
+        <ResumoView requests={filtered} />
       ) : filtered.length === 0 ? (
         <div className="empty-state">
           <p style={{ fontSize: 28 }}>📋</p>

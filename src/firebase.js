@@ -18,6 +18,10 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+/* Garante que o template de password reset / verificação saia em pt-BR
+ * em vez do inglês default — reduz risco de o e-mail ser tratado como
+ * phishing pelas funcionárias e por filtros de spam corporativos. */
+auth.languageCode = 'pt';
 
 /* Firestore com cache local persistente (IndexedDB).
  * Crítico em PWA mobile: enfermeira abre o app sem sinal e ainda enxerga
